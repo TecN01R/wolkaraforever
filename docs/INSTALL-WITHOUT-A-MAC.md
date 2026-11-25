@@ -15,6 +15,19 @@ The only extra app on the phone is **LocalDevVPN** (free, App Store).
 
 The steps take about 30 minutes, plus the game download (about 70 GB, on the phone).
 
+## Quick start
+
+1. [Set up the computer](#step-1-set-up-the-computer-once): `usbmuxd`, `pymobiledevice3`, this
+   repository, `xtool-duo` and the app.
+2. [Sign in to Apple](#step-2-sign-in-to-apple-once) with your free Apple ID.
+3. [Install the app](#step-3-install-the-app) over USB: `duo/install.sh`.
+4. [Allow it on the phone](#step-4-allow-the-app-on-the-phone-once): Developer Mode, and trust your
+   Apple ID.
+5. [Pair for JIT](#step-5-pair-the-phone-for-jit-once): `duo/push_pairing.sh`.
+6. [Install LocalDevVPN](#step-6-install-localdevvpn-once) and connect it.
+7. [Play](#step-7-play): open **Tolkara**, install the game, tap **Play**.
+8. [Every week](#every-week-renew-the-free-signature): run `duo/install.sh` again.
+
 ## What works today
 
 | | Status |
@@ -25,9 +38,8 @@ The steps take about 30 minutes, plus the game download (about 70 GB, on the pho
 | Windows, through WSL2 with USB passthrough | Possible in principle (xtool supports it); **not tested** |
 | macOS | Not needed. If you have a Mac, upstream's [Mac route](INSTALLATION.md) also works |
 
-You may [open an issue](https://github.com/TecN01R/wolkaraforever/issues) to share what happened on
-your device, but there's no support and no reply is promised. This is unofficial: not affiliated
-with Blizzard, Apple or the upstream WolkaraForever project.
+This is unofficial: not affiliated with Blizzard, Apple or the upstream WolkaraForever project. There's
+no support.
 
 ## What you need
 
@@ -127,8 +139,9 @@ service. It's a loopback connection: none of your traffic leaves the phone throu
    For a sharp interface on the iPhone Duo, choose **Render profile → Quality**. Then in the game,
    lower **Options → Graphics → Render Scale** (75% keeps the 3D light).
 4. Choose the edition, region and game language, tap **Install**, and wait for the download.
-5. Tap **Play**. The first time, the app downloads Apple's developer disk image (once) and turns
-   on JIT. This takes a few seconds, then the game starts.
+5. Tap **Play**. The app turns on JIT by itself a few seconds after it opens, while LocalDevVPN is
+   connected, so Play starts the game straight away. (The very first time, it also downloads Apple's
+   developer disk image once.) If JIT wasn't ready, Play does it and shows the progress.
 
 Touch controls, a controller or a keyboard all work. [Use WolkaraForever](USING_WOLKARAFOREVER.md)
 and [iPhone use](IPHONE.md) cover the launcher's options.
@@ -156,7 +169,8 @@ LocalDevVPN only works on Wi-Fi (an iOS restriction). On mobile data:
 3. Turn **Airplane Mode** off and tap **Retry**: the update check runs over mobile data.
 4. Tap **Play**.
 
-This flow is new in the latest build and **not yet tested on a device**.
+**Tested on the Duo:** preparing JIT when the app opens, before Play (step 2). **Not yet run end to
+end:** the whole sequence on mobile data.
 
 ## When something goes wrong
 

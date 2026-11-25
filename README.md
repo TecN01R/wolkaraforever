@@ -4,6 +4,10 @@
 
 ## Play WoW Forever on iPhone or iPad without a Mac (free Apple ID, no paid developer account)
 
+> ### 📲 [Install guide: WolkaraForever without a Mac →](docs/INSTALL-WITHOUT-A-MAC.md)
+> About 30 minutes, with a Linux PC, a USB cable and a free Apple ID. The
+> [quick install](#quick-install-linux) commands are below.
+
 **This fork of [WolkaraForever](https://github.com/jklock/wolkaraforever)** lets you run World of
 Warcraft Forever locally on an **iPhone or iPad** with **no Mac**, **no Xcode**, **no paid Apple
 Developer account**, **no jailbreak** and **no streaming**. You sign and install it from a
@@ -13,16 +17,9 @@ StikDebug, SideStore or AltStore). The only extra app on the phone is LocalDevVP
 > [!WARNING]
 > **Only tested on one iPhone Duo (iOS 27.2.1), signed from Fedora Linux.** It's shared as is, with no claims about its effectiveness or correctness, and no support. Use it at your own risk.
 
-**→ Step-by-step guide: [Install WolkaraForever without a Mac](docs/INSTALL-WITHOUT-A-MAC.md)**
+### Quick install (Linux)
 
-| | |
-| --- | --- |
-| Download the app (unsigned `.ipa`) | [Latest release](https://github.com/TecN01R/wolkaraforever/releases/latest) |
-| Download the signer for free Apple IDs (`xtool-duo`, Linux AppImage) | [xtool-duo release](https://github.com/TecN01R/wolkaraforever/releases/tag/xtool-duo) |
-| Tested on | Only one iPhone Duo, iOS 27.2.1, signed from Fedora Linux. Nothing else is tested, and no claim is made for any other device or system |
-| Keeps | the increased memory limit, game downloads and updates, add-ons, touch controls, your data across the weekly re-signing |
-
-In short, on Linux (the [guide](docs/INSTALL-WITHOUT-A-MAC.md) explains every step):
+The [guide](docs/INSTALL-WITHOUT-A-MAC.md) explains every step:
 
 ```sh
 mkdir -p ~/wolkara/tools && cd ~/wolkara
@@ -37,6 +34,14 @@ duo/install.sh ~/wolkara/wolkaraforever-duo-unsigned.ipa   # phone on USB, unloc
 duo/push_pairing.sh                                 # once: lets the app turn on JIT by itself
 # on the phone: install LocalDevVPN from the App Store, connect it, open "Tolkara", tap Play
 ```
+
+| | |
+| --- | --- |
+| Download the app (unsigned `.ipa`) | [Latest release](https://github.com/TecN01R/wolkaraforever/releases/latest) |
+| Download the signer for free Apple IDs (`xtool-duo`, Linux AppImage) | [xtool-duo release](https://github.com/TecN01R/wolkaraforever/releases/tag/xtool-duo) |
+| Tested on | Only one iPhone Duo, iOS 27.2.1, signed from Fedora Linux. Nothing else is tested, and no claim is made for any other device or system |
+| Keeps | the increased memory limit, game downloads and updates, add-ons, touch controls, your data across the weekly re-signing |
+| Confirmed on that Duo | JIT (on Play and when the app opens), login and gameplay, an 8 GiB memory limit with iOS Game Mode, and the interface at native resolution (Quality). Not yet run end to end: playing on mobile data |
 
 Unofficial: not affiliated with Blizzard, Apple or the upstream WolkaraForever project. Provided as is,
 without warranty (see [LICENSE](LICENSE)) and without support. This project contains no game files; you need your own game
