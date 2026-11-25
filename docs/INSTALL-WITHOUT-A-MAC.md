@@ -19,7 +19,7 @@ The steps take about 30 minutes, plus the game download (about 70 GB, on the pho
 
 | | Status |
 | --- | --- |
-| iPhone Duo, iOS 27.2.1, signed from Fedora 44 Linux | **Tested**: JIT, game start, login and gameplay work; increased memory limit granted |
+| iPhone Duo, iOS 27.2.1, signed from Fedora 44 Linux | **Tested**: JIT (also prepared on opening the app), game start, login and gameplay work; increased memory limit granted, and iOS Game Mode raises it to 8 GiB |
 | Other iPhones and iPads | **Not tested.** No claim either way |
 | Other Linux distributions (Ubuntu, Debian, Arch…) | **Not tested.** No claim either way |
 | Windows, through WSL2 with USB passthrough | Possible in principle (xtool supports it); **not tested** |

@@ -28,9 +28,11 @@ This page covers what each script does and how this fork differs from upstream.
   light. Balanced (2x) stays the default.
 - **Memory.**
   - xtool-duo makes Apple grant the increased memory limit on a free team.
-  - The app also declares iOS Game Mode. With Game Mode on, the limit is expected to rise from
-    about 6 GB to about 8 GB (measured by Playport on a 12 GB iPhone; **not yet confirmed on the
-    Duo**).
+  - The app also declares iOS Game Mode. On the iPhone Duo (2026-11-25), iOS's gamepolicyd turned
+    Game Mode on for the app ("Acquired increased memory assertion"), and the limit at game start
+    went from 6,144 MiB to **8,192 MiB**. No Game Mode banner appeared.
+  - The limit drops back to 6 GiB whenever the app leaves the screen (and for about 2 seconds while
+    JIT attaches). A game above 6 GiB that is sent to the background can then be ended by iOS.
   - To check, add `footprint` and `available` on a `memory checkpoint=` line in
     `Documents/external-jit-diagnostics.log`.
 
