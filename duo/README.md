@@ -17,11 +17,11 @@ This page covers what each script does and how this fork differs from upstream.
     through LocalDevVPN (10.7.0.1), mounts the developer disk image (downloaded once, cached in
     its own Library), and runs the universal protocol. The app then prepares its executable memory
     and the debugger detaches before any game code runs.
-  - Sources: `wolkaraforever/JIT/`, `wolkaraforever/JITHelper/`, and patch 0091.
+  - Sources: `wolkaraforever/JIT/`, `wolkaraforever/JITHelper/`, and patch 0902.
 - **When JIT is set up.** The app sets up JIT each time it comes to the foreground, if
   LocalDevVPN is connected. That's what makes the mobile-data flow possible. If it couldn't, Play
   runs the same steps itself and shows them.
-- **iOS on Duo touch.** Patch 0090 makes direct touch follow the interface mode, so it also works
+- **iOS on Duo touch.** Patch 0901 makes direct touch follow the interface mode, so it also works
   with **iOS on Duo**.
 - **Render profile.** On the iPhone Duo, **Quality** renders at the screen's native scale, so the
   game's interface is drawn pixel for pixel. Lower the game's own Render Scale to keep the 3D

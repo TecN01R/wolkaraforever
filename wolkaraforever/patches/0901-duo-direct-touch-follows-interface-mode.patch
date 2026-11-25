@@ -1,4 +1,4 @@
-# WolkaraForever layer patch 0090 - direct touch follows the interface mode, Duo included
+# WolkaraForever layer patch 0901 - direct touch follows the interface mode, Duo included
 #
 # Why: patch 0055 gates the mobile interface's direct touch (tap = left click, hold = right
 # click, drag, pinch zoom, several fingers on the game view) on WolkaraForeverInterfaceModeV1

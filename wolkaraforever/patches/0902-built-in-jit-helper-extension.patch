@@ -1,4 +1,4 @@
-# WolkaraForever layer patch 0091 - Built-in JIT: the StikJIT helper extension in the .ipa
+# WolkaraForever layer patch 0902 - Built-in JIT: the StikJIT helper extension in the .ipa
 #
 # Why: External JIT needs a debugger outside the app at every launch, so far a separate
 # enabler app. Built-in JIT moves that enabler into the app as a helper extension: a process
@@ -11,7 +11,7 @@
 # - tools/package_ipa.sh: ad hoc signing from the inside out (framework, helper, app), since
 #   codesign refuses a bundle with unsigned nested code. The sideloader re-signs all of it.
 #
-# Applies after: 0066-ipa-carries-the-system-roots.patch, 0090-duo-direct-touch-follows-interface-mode.patch
+# Applies after: 0066-ipa-carries-the-system-roots.patch, 0901-duo-direct-touch-follows-interface-mode.patch
 # Applies to: project.yml, tools/package_ipa.sh
 # Upstream: no (fork-specific route).
 #
