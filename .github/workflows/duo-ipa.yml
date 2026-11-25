@@ -1,0 +1,94 @@
+# Duo fork: build the unmodified External JIT .ipa (TolkaraDiagnostics) and keep it as a
+# workflow artifact for wolkaraforever/duo/fetch_ipa.sh on the Linux machine that signs it.
+#
+# Differs from release.yml only where release.yml is known to fail:
+#   - v1.0.20 failed on macos-26's default Xcode (iOS 27 AVAudioSession API missing), so this
+#     job selects Xcode 27 exactly as validate.yml does, on the runner label validate.yml uses;
+#   - nothing is published as a release: the .ipa is an artifact of the run.
+# No Apple credential, certificate, profile or device record is used or needed here: the
+# package is unsigned (ad hoc), and signing happens on the user's own machine with xtool.
+
+name: Duo IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag or commit to build (default: the branch the run starts on)"
+        required: false
+  push:
+    branches: [duo-baseline]
+    paths-ignore: ["**.md", "docs/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: duo-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IPA: wolkaraforever-duo-unsigned.ipa
+  # Stable on purpose: xtool registers it as XTL-<team>.<this>, and the same identifier on
+  # every install is what keeps the downloaded game and settings across weekly re-signing.
+  TOLKARA_BUNDLE_ID: local.wolkaraforever.duo
+  TOLKARA_KEYCHAIN_GROUP: local.wolkaraforever.duo.authorization
+
+jobs:
+  ipa:
+    name: Unsigned External JIT .ipa
+    runs-on: xcode-27
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          fetch-depth: 0
+
+      - name: Built commit
+        run: |
+          echo "built commit: $(git rev-parse HEAD)" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Use Xcode 27
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_27*.app | sort -V | tail -1)"
+          echo "DEVELOPER_DIR=$(xcode-select -p)" >> "$GITHUB_ENV"
+          xcodebuild -version | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      # Same commands as release.yml: the platform packager, then the repository's verifier
+      # (one app, no extension, no profile, no team, memory entitlements declared, root
+      # certificates present - without them every Battle.net login fails with BLZ51900003).
+      - name: Build the unsigned .ipa
+        run: wolkaraforever/tools/package_ipa.sh "$IPA"
+
+      - name: Verify the .ipa
+        run: wolkaraforever/tools/verify_ipa.sh "$IPA" verify-report.txt
+
+      - name: Checksum
+        run: |
+          shasum -a 256 "$IPA" | tee "$IPA.sha256"
+          { echo '```'; cat "$IPA.sha256"; cat verify-report.txt 2>/dev/null; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wolkaraforever-duo-ipa
+          path: |
+            ${{ env.IPA }}
+            ${{ env.IPA }}.sha256
+            verify-report.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Keep the build log if it failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: |
+            logs/
+            build/platform/logs/
+          retention-days: 7
+          if-no-files-found: ignore
