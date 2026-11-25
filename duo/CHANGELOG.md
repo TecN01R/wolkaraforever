@@ -37,6 +37,13 @@ correctness.
 - **Documentation.** [Install WolkaraForever without a Mac](../docs/INSTALL-WITHOUT-A-MAC.md),
   [llms.txt](../llms.txt), and this file.
 
+### Changed
+
+- **Saved game password (experimental Battle.net login).** Once a password is saved, **Play**
+  starts the game at its own login screen instead of opening the browser every time. The login
+  sheet gains **Sign in through the browser this time**, and, before a password is saved, **Start
+  at the game's login to save a password**. *Not yet tested on a device.*
+
 ### Fixed
 
 - **Direct touch with "iOS on Duo".** Upstream enabled direct touch only for the plain "iOS"

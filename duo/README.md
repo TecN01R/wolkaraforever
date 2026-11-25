@@ -26,6 +26,9 @@ and when, is in [CHANGELOG.md](CHANGELOG.md).
   runs the same steps itself and shows them.
 - **iOS on Duo touch.** Patch 0901 makes direct touch follow the interface mode, so it also works
   with **iOS on Duo**.
+- **Saved game password.** With the experimental Battle.net login on and a password saved, Play
+  goes straight to the game's own login screen (upstream opens the browser on every Play). *Not
+  yet tested on a device.*
 - **Render profile.** On the iPhone Duo, **Quality** renders at the screen's native scale, so the
   game's interface is drawn pixel for pixel. Lower the game's own Render Scale to keep the 3D
   light. Balanced (2x) stays the default. Confirmed on the Duo (2026-11-25): its native scale is
