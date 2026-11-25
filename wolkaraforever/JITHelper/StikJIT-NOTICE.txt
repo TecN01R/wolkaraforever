@@ -1,0 +1,5 @@
+This app extension (WolkaraJITHelper) embeds StikJIT 2.0.1, unmodified, as StikJIT.framework.
+
+StikJIT is distributed under the Mozilla Public License 2.0; the licence text is in
+StikJIT-LICENSE.txt next to this file. Its Source Code Form is available at
+https://github.com/StikDebug/StikJIT/tree/2.0.1

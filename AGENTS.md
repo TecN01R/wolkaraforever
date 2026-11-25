@@ -1,5 +1,16 @@
 # Repository Guidelines
 
+## This fork (TecN01R/wolkaraforever)
+
+This is an unofficial fork; upstream is `jklock/wolkaraforever`. Its default branch is
+`duo-baseline` (upstream `main` plus the fork's work), merged from upstream, never rebased:
+`duo/sync_upstream.sh` by hand, or `.github/workflows/upstream-sync.yml` weekly. The fork's
+own patches are numbered `09xx`. It targets Linux signing with a free Apple ID, plus Built-in JIT
+(StikJIT helper extension) and LocalDevVPN; start at `duo/README.md` and
+`docs/INSTALL-WITHOUT-A-MAC.md`. Record fork changes in `duo/CHANGELOG.md`, not upstream's
+`CHANGELOG.md`. Keep the public docs' "tested" claims to what a device log shows. The rules
+below are upstream's; where they say `main`, this fork means `duo-baseline`.
+
 ## Repository governance
 
 - `main` is the integration branch. Work on one short-lived, single-purpose branch and open a

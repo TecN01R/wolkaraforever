@@ -1,11 +1,14 @@
 # The no-Mac scripts (Linux, free Apple ID, Built-in JIT)
 
+> Verified: 2026-11-25 · Source: `b7b8dd8` · Device: one iPhone Duo, iOS 27.2.1
+
 To install, follow **[Install WolkaraForever without a Mac](../docs/INSTALL-WITHOUT-A-MAC.md)**.
 
 > [!WARNING]
 > **Only tested on one iPhone Duo (iOS 27.2.1), signed from Fedora Linux.** It's shared as is, with no claims about its effectiveness or correctness, and no support. Use it at your own risk.
 
-This page covers what each script does and how this fork differs from upstream.
+This page covers what each script does and how this fork differs from upstream. What changed,
+and when, is in [CHANGELOG.md](CHANGELOG.md).
 
 ## How the fork differs from upstream
 

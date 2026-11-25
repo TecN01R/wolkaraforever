@@ -295,3 +295,5 @@ wolkaraforever/JITHelper/Info.plist jithelper/Info.plist add
 wolkaraforever/JITHelper/main.m jithelper/main.m add
 wolkaraforever/JITHelper/WKJITHelper-Bridging.h jithelper/WKJITHelper-Bridging.h add
 wolkaraforever/JITHelper/WKJITWorker.swift jithelper/WKJITWorker.swift add
+wolkaraforever/JITHelper/StikJIT-LICENSE.txt jithelper/StikJIT-LICENSE.txt add
+wolkaraforever/JITHelper/StikJIT-NOTICE.txt jithelper/StikJIT-NOTICE.txt add

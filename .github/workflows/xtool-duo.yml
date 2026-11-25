@@ -51,6 +51,7 @@ jobs:
         run: |
           docker compose run --build -e XTOOL_VERSION="duo-${XTOOL_BASE::7}" -e XTL_CI=1 --rm xtool Linux/build.sh
           cp Linux/packages/xtool-x86_64.AppImage ../xtool-duo-x86_64.AppImage
+          cp LICENSE.md ../xtool-LICENSE.md   # MIT: the notice travels with the binary
 
       - name: Check it runs
         run: |
@@ -64,6 +65,7 @@ jobs:
           path: |
             xtool-duo-x86_64.AppImage
             xtool-duo-x86_64.AppImage.sha256
+            xtool-LICENSE.md
           if-no-files-found: error
           retention-days: 30
 
@@ -77,7 +79,7 @@ jobs:
           xtool (https://github.com/xtool-org/xtool, MIT) at ${XTOOL_BASE}, plus
           duo/xtool-increased-memory-limit.patch from this repository, built as xtool builds its own
           AppImage. Use it in place of stock xtool to sign WolkaraForever with a free Apple ID while
-          keeping the increased memory limit. Guide:
+          keeping the increased memory limit. xtool's MIT licence is attached (xtool-LICENSE.md). Guide:
           ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/duo-baseline/docs/INSTALL-WITHOUT-A-MAC.md
 
           Only tested with one iPhone Duo, from Fedora Linux. Provided as is: no claims about its
@@ -86,10 +88,10 @@ jobs:
           SHA-256: $(cut -d' ' -f1 xtool-duo-x86_64.AppImage.sha256)
           EOF
           if gh release view xtool-duo >/dev/null 2>&1; then
-            gh release upload xtool-duo xtool-duo-x86_64.AppImage xtool-duo-x86_64.AppImage.sha256 --clobber
+            gh release upload xtool-duo xtool-duo-x86_64.AppImage xtool-duo-x86_64.AppImage.sha256 xtool-LICENSE.md --clobber
             gh release edit xtool-duo --notes-file notes.md --latest=false
           else
-            gh release create xtool-duo xtool-duo-x86_64.AppImage xtool-duo-x86_64.AppImage.sha256 \
+            gh release create xtool-duo xtool-duo-x86_64.AppImage xtool-duo-x86_64.AppImage.sha256 xtool-LICENSE.md \
               --target "$GITHUB_SHA" --title "xtool-duo (patched xtool for free Apple IDs)" \
               --notes-file notes.md --latest=false
           fi

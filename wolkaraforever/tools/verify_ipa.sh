@@ -46,6 +46,10 @@ stikjit="$helper/Frameworks/StikJIT.framework"
     echo "verify_ipa: the JIT helper does not carry StikJIT.framework with universal.js" >&2; exit 1
 }
 stikjit_version=$(plutil -extract CFBundleShortVersionString raw "$stikjit/Info.plist")
+# StikJIT is MPL-2.0: the binary carries its licence and where its source is.
+for notice in StikJIT-LICENSE.txt StikJIT-NOTICE.txt; do
+    [ -f "$helper/$notice" ] || { echo "verify_ipa: the JIT helper lacks $notice (StikJIT's MPL-2.0 notice)" >&2; exit 1; }
+done
 
 # The one build input a reduced package is most likely to be missing, and the one that decides
 # whether any login can work: the public root certificates a source build exports from the

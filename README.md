@@ -45,6 +45,9 @@ duo/push_pairing.sh                                 # once: lets the app turn on
 | Keeps | the increased memory limit, game downloads and updates, add-ons, touch controls, your data across the weekly re-signing |
 | Confirmed on that Duo | JIT (on Play and when the app opens), login and gameplay, an 8 GiB memory limit with iOS Game Mode, and the interface at native resolution (Quality). Not yet run end to end: playing on mobile data |
 
+What this fork changes: [duo/README.md](duo/README.md) and its [changelog](duo/CHANGELOG.md).
+Third-party notices: [NOTICE.md](NOTICE.md).
+
 Unofficial: not affiliated with Blizzard, Apple or the upstream WolkaraForever project. Provided as is,
 without warranty (see [LICENSE](LICENSE)) and without support. This project contains no game files; you need your own game
 account.

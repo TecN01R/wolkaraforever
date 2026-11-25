@@ -1,5 +1,7 @@
 # Install WolkaraForever on iPhone or iPad without a Mac (free Apple ID, Linux)
 
+> Verified: 2026-11-25 · Source: `b7b8dd8` · Device: one iPhone Duo, iOS 27.2.1
+
 Play **World of Warcraft Forever** (WoW Forever) on your iPhone or iPad with **WolkaraForever**:
 
 - **no Mac** and **no Xcode**: you sign and install from a **Linux** PC;
