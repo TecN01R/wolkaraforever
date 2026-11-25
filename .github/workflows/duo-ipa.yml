@@ -18,7 +18,7 @@ on:
         required: false
   push:
     branches: [duo-baseline]
-    paths-ignore: ["**.md", "docs/**"]
+    paths-ignore: ["**.md", "docs/**", "duo/**"]
 
 permissions:
   contents: read

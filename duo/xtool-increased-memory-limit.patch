@@ -1,0 +1,69 @@
+diff --git a/Sources/XKit/DeveloperServices/App IDs/Entitlements/DeveloperServicesCapability.swift b/Sources/XKit/DeveloperServices/App IDs/Entitlements/DeveloperServicesCapability.swift
+index 05aad38..31e89d8 100644
+--- a/Sources/XKit/DeveloperServices/App IDs/Entitlements/DeveloperServicesCapability.swift	
++++ b/Sources/XKit/DeveloperServices/App IDs/Entitlements/DeveloperServicesCapability.swift	
+@@ -158,3 +158,33 @@ extension WiFiAwareEntitlement: EntitlementWithCapability {
+         DeveloperServicesCapability(rawName: "WIFI_AWARE", isFree: false)
+     }
+ }
++
++// MARK: - Kernel memory capabilities
++
++// The Developer Services capability ID can be overridden without a rebuild, in case Apple's
++// name differs: XTL_CAPABILITY_INCREASED_MEMORY_LIMIT / XTL_CAPABILITY_EXTENDED_VIRTUAL_ADDRESSING.
++private func kernelCapabilityName(_ variable: String, default name: String) -> String {
++    ProcessInfo.processInfo.environment[variable].flatMap { $0.isEmpty ? nil : $0 } ?? name
++}
++
++extension IncreasedMemoryLimitEntitlement: EntitlementWithCapability {
++    var capability: DeveloperServicesCapability {
++        // Requested for free teams too: AltStore 2.2, SideStore and Impactor ask for it on
++        // Personal Teams. If Apple refuses it, the capability request fails with Apple's reason.
++        DeveloperServicesCapability(
++            rawName: kernelCapabilityName("XTL_CAPABILITY_INCREASED_MEMORY_LIMIT", default: "INCREASED_MEMORY_LIMIT"),
++            isFree: true
++        )
++    }
++}
++
++extension ExtendedVirtualAddressingEntitlement: EntitlementWithCapability {
++    var capability: DeveloperServicesCapability {
++        // Paid only per Apple's capability table, so a free team drops it as before, unless
++        // XTL_TRY_FREE_EVA=1 asks Apple anyway (an experiment; a refusal stops the install).
++        DeveloperServicesCapability(
++            rawName: kernelCapabilityName("XTL_CAPABILITY_EXTENDED_VIRTUAL_ADDRESSING", default: "EXTENDED_VIRTUAL_ADDRESSING"),
++            isFree: ProcessInfo.processInfo.environment["XTL_TRY_FREE_EVA"] == "1"
++        )
++    }
++}
+diff --git a/Sources/XKit/Model/Entitlements/EntitlementTypes.swift b/Sources/XKit/Model/Entitlements/EntitlementTypes.swift
+index 7bc1ea5..542c95c 100644
+--- a/Sources/XKit/Model/Entitlements/EntitlementTypes.swift
++++ b/Sources/XKit/Model/Entitlements/EntitlementTypes.swift
+@@ -30,6 +30,8 @@ extension EntitlementContainer {
+         HomeKitEntitlement.self,
+         HealthKitEntitlement.self,
+         AppleSignInEntitlement.self,
++        IncreasedMemoryLimitEntitlement.self,
++        ExtendedVirtualAddressingEntitlement.self,
+     ]
+ }
+ 
+@@ -200,3 +202,17 @@ public struct HealthKitEntitlement: Entitlement, RawRepresentable {
+     public var rawValue: Bool
+     public init(rawValue: Bool) { self.rawValue = rawValue }
+ }
++
++public struct IncreasedMemoryLimitEntitlement: Entitlement, RawRepresentable {
++    public static let identifier = "com.apple.developer.kernel.increased-memory-limit"
++
++    public var rawValue: Bool
++    public init(rawValue: Bool) { self.rawValue = rawValue }
++}
++
++public struct ExtendedVirtualAddressingEntitlement: Entitlement, RawRepresentable {
++    public static let identifier = "com.apple.developer.kernel.extended-virtual-addressing"
++
++    public var rawValue: Bool
++    public init(rawValue: Bool) { self.rawValue = rawValue }
++}
