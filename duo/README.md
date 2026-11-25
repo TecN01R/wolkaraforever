@@ -25,7 +25,9 @@ This page covers what each script does and how this fork differs from upstream.
   with **iOS on Duo**.
 - **Render profile.** On the iPhone Duo, **Quality** renders at the screen's native scale, so the
   game's interface is drawn pixel for pixel. Lower the game's own Render Scale to keep the 3D
-  light. Balanced (2x) stays the default.
+  light. Balanced (2x) stays the default. Confirmed on the Duo (2026-11-25): its native scale is
+  2.81, so Quality is 2670 × 1878 unfolded. The game then shows Resolution "Custom", and the
+  number beside Render Scale is the 3D size (for example 2010x1414 at 75%).
 - **Memory.**
   - xtool-duo makes Apple grant the increased memory limit on a free team.
   - The app also declares iOS Game Mode. On the iPhone Duo (2026-11-25), iOS's gamepolicyd turned

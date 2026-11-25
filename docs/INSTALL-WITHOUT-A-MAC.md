@@ -19,7 +19,7 @@ The steps take about 30 minutes, plus the game download (about 70 GB, on the pho
 
 | | Status |
 | --- | --- |
-| iPhone Duo, iOS 27.2.1, signed from Fedora 44 Linux | **Tested**: JIT (also prepared on opening the app), game start, login and gameplay work; increased memory limit granted, and iOS Game Mode raises it to 8 GiB |
+| iPhone Duo, iOS 27.2.1, signed from Fedora 44 Linux | **Tested**: JIT (also prepared on opening the app), game start, login and gameplay work; increased memory limit granted, and iOS Game Mode raises it to 8 GiB; the Quality render profile draws the interface at the screen's native 2670 × 1878 |
 | Other iPhones and iPads | **Not tested.** No claim either way |
 | Other Linux distributions (Ubuntu, Debian, Arch…) | **Not tested.** No claim either way |
 | Windows, through WSL2 with USB passthrough | Possible in principle (xtool supports it); **not tested** |
@@ -124,6 +124,8 @@ service. It's a loopback connection: none of your traffic leaves the phone throu
 1. Make sure **LocalDevVPN** is connected.
 2. Open **Tolkara** (the app's name on the Home Screen).
 3. iPhone: **Launcher Manager → iOS on Duo** for the phone interface. iPad: keep **iPadOS**.
+   For a sharp interface on the iPhone Duo, choose **Render profile → Quality**. Then in the game,
+   lower **Options → Graphics → Render Scale** (75% keeps the 3D light).
 4. Choose the edition, region and game language, tap **Install**, and wait for the download.
 5. Tap **Play**. The first time, the app downloads Apple's developer disk image (once) and turns
    on JIT. This takes a few seconds, then the game starts.
