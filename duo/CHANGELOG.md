@@ -36,6 +36,10 @@ correctness.
   by hand.
 - **Documentation.** [Install WolkaraForever without a Mac](../docs/INSTALL-WITHOUT-A-MAC.md),
   [llms.txt](../llms.txt), and this file.
+- **Stay signed in (experimental Battle.net login).** An opt-in in the login sheet keeps
+  Battle.net's web session on the device between app launches, so the sign-in page needs no
+  typing after a restart. Off by default, as upstream keeps the session in memory only. *Not yet
+  tested on a device.*
 
 ### Fixed
 

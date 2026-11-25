@@ -17,7 +17,10 @@
     NSTimer *_deadline;
 }
 
-+ (WKWebsiteDataStore *)signInDataStore {
+// Fork: "Stay signed in on this device", off by default. See +staySignedInDataStore.
+static NSString *const TKBattleNetStaySignedInKey=@"WoWBrowserLoginStaySignedIn";
+
++ (WKWebsiteDataStore *)memoryDataStore {
     // Isolated from add-on browsing and kept in memory only (hardened local build):
     // the Battle.net web session can mint new launch tickets, so it is never written
     // to disk and ends with this process. WebKit owns the cookies; the launcher never
@@ -28,10 +31,51 @@
     dispatch_once(&once, ^{ store=WKWebsiteDataStore.nonPersistentDataStore; });
     return store;
 }
+// Fork: the player's opt-in to keep Battle.net's web session across app launches, so the
+// sign-in page needs no typing next time. It is a second WebKit store of its own - still
+// isolated from add-on browsing, still never read or exported by the launcher - that WebKit
+// keeps on disk inside this app's container. The price is the one the store above avoids: while
+// it is kept, whoever can open this app on the unlocked device can start the game on that
+// account. Off, disabling the login and "Clear sign-in data" all empty it.
++ (nullable WKWebsiteDataStore *)staySignedInDataStore {
+    if (@available(iOS 17.0, *)) {
+        static WKWebsiteDataStore *store;
+        static dispatch_once_t once;
+        dispatch_once(&once, ^{
+            NSUUID *identifier=[[NSUUID alloc] initWithUUIDString:@"6B1D2C0A-5E0F-4C1B-9A57-3D2B8E64F0A1"];
+            store=[WKWebsiteDataStore dataStoreForIdentifier:identifier];
+        });
+        return store;
+    }
+    return nil;
+}
++ (BOOL)staysSignedIn {
+    return [NSUserDefaults.standardUserDefaults boolForKey:TKBattleNetStaySignedInKey] &&
+           [self staySignedInDataStore]!=nil;
+}
++ (BOOL)canStaySignedIn { return [self staySignedInDataStore]!=nil; }
++ (void)setStaysSignedIn:(BOOL)stay completion:(nullable void (^)(void))completion {
+    if (!completion) completion=^{};
+    [NSUserDefaults.standardUserDefaults setBool:stay && [self canStaySignedIn] forKey:TKBattleNetStaySignedInKey];
+    WKLog("battle-login", @"stay signed in: %@", [self staysSignedIn] ? @"on" : @"off");
+    // Either way the next sign-in starts clean: turning it off must leave nothing on disk, and
+    // turning it on must not carry over a session the player did not ask to keep.
+    [self clearSavedSignInWithCompletion:completion];
+}
++ (WKWebsiteDataStore *)signInDataStore {
+    WKWebsiteDataStore *kept=[self staysSignedIn] ? [self staySignedInDataStore] : nil;
+    return kept ?: [self memoryDataStore];
+}
 + (void)clearSavedSignInWithCompletion:(void (^)(void))completion {
     [TKBattleNetSession clear];
-    [[self signInDataStore] removeDataOfTypes:WKWebsiteDataStore.allWebsiteDataTypes
-                              modifiedSince:NSDate.distantPast completionHandler:completion];
+    // Both stores, whichever is in use: nothing of a sign-in survives a clear.
+    WKWebsiteDataStore *kept=[self staySignedInDataStore];
+    [[self memoryDataStore] removeDataOfTypes:WKWebsiteDataStore.allWebsiteDataTypes
+                              modifiedSince:NSDate.distantPast completionHandler:^{
+        if (!kept) { if (completion) completion(); return; }
+        [kept removeDataOfTypes:WKWebsiteDataStore.allWebsiteDataTypes
+                  modifiedSince:NSDate.distantPast completionHandler:^{ if (completion) completion(); }];
+    }];
 }
 
 - (instancetype)initWithRegion:(NSString *)region locale:(NSString *)locale {

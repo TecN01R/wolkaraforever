@@ -879,6 +879,14 @@
 "login.cleared.title" = "Données de connexion effacées";
 "login.cleared.message" = "La session web en mémoire, tout ticket de lancement en attente et le mot de passe enregistré ont été supprimés.";
 "login.failed" = "La connexion ne s’est pas terminée. Annulez et réessayez.";
+/* Fork: stay signed in between app launches */
+"login.stay.on" = "Rester connecté sur cet appareil";
+"login.stay.off" = "Ne plus rester connecté";
+"login.stay.confirm.title" = "Rester connecté sur cet appareil ?";
+"login.stay.confirm.message" = "La session web de Battle.net est alors conservée sur cet appareil entre les lancements de l'app, et la connexion ne demande plus de saisie la fois suivante. Cochez \"Rester connecté\" sur la page de Battle.net. Tant qu'elle est conservée, toute personne pouvant ouvrir cette app sur votre appareil déverrouillé peut lancer le jeu avec votre compte. Désactiver ce réglage, désactiver la connexion expérimentale ou effacer les données de connexion la supprime.";
+"login.stay.confirm.yes" = "Rester connecté";
+"login.stay.stopped.title" = "Ne reste plus connecté";
+"login.stay.stopped.message" = "La session Battle.net conservée sur cet appareil a été supprimée. La connexion est redemandée après le redémarrage de l'app.";
 
 /* ---- Saved game password, experimental Battle.net login ---- */
 "login.status.onSaved" = "Activé · mot de passe enregistré";
