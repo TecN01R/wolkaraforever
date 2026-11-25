@@ -3,7 +3,7 @@
 // What is checked is the part that has a right answer: every shipped model identifier resolves
 // to its own record and nothing else, an unlisted device resolves to the conservative fallback
 // rather than to nil or to a guessed profile, and a profile that was never measured cannot be
-// asked for native-size rendering. The hardware itself is not measured here - that is what
+// asked for native-size rendering (the iPhone Duo excepted, at its screen's own scale). The hardware itself is not measured here - that is what
 // PERFORMANCE_THERMAL.md records and what the device self-test reports.
 
 #import <Foundation/Foundation.h>
@@ -187,6 +187,22 @@ int main(void) {
                 Check(phone.nativeWidth==0 && phone.nativeHeight==0,@"does not mutate the shared catalogue");
             }
         }
+
+        // --- the Duo: Quality is the screen's own scale, offered only above Balanced's 2x
+        TKDeviceProfile *duo=[TKDeviceProfile profileForModelIdentifier:@"iPhone19,4"];
+        Check(duo.highestQuality==TKRenderQualityQuality && duo.recommendedQuality==TKRenderQualityBalanced,
+              @"the Duo offers Quality and still defaults to Balanced");
+        TKDeviceProfile *duoNative=[duo profileWithWidth:951 height:669 screenScale:3.0];
+        Check([duoNative backingScaleForQuality:TKRenderQualityQuality]==3.0, @"Quality is the panel's 3x (2853 × 2007)");
+        Check([duoNative backingScaleForQuality:TKRenderQualityBalanced]==2.0, @"Balanced stays 2x");
+        Check([[duo profileWithWidth:951 height:669 screenScale:2.0] backingScaleForQuality:TKRenderQualityQuality]==0,
+              @"a 2x screen has no Quality above Balanced");
+        Check([[duo profileWithWidth:951 height:669 screenScale:4.0] backingScaleForQuality:TKRenderQualityQuality]==0,
+              @"nor past the runtime's 3x ceiling");
+        Check([[TKDeviceProfile profileForModelIdentifier:@"iPhone19,2"] profileWithWidth:956 height:440 screenScale:3.0]
+                  .highestQuality==TKRenderQualityBalanced, @"other phones are unchanged");
+        Check([[[TKDeviceProfile profileForModelIdentifier:@"iPhone19,2"] profileWithWidth:956 height:440 screenScale:3.0]
+                  backingScaleForQuality:TKRenderQualityQuality]==0, @"and offer no Quality");
 
         printf("DEVICE_PROFILE_PASS: %lu checks: every model resolves to its own record, an unknown device "
                "falls back to Performance, Quality is only offered where it was measured, an override is "

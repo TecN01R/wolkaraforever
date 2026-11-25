@@ -96,9 +96,15 @@
                     chip:@"" width:0 height:0 highest:TKRenderQualityBalanced qualityScale:0 measured:NO
                    notes:@"Model from Xcode's device catalogue. Uses the current window size; 2x is a readability default, not a measured frame-rate claim."
                   models:@[@"iPhone19,3"]],
+            // Quality on the Duo is the panel's own pixels: the launcher passes the screen's
+            // native scale in (-profileWithWidth:height:screenScale:), and 3.0 stands for it
+            // only until it does. Balanced (2x) is stretched onto that panel by CoreAnimation, so
+            // the game's interface is soft there; at Quality the interface is drawn pixel for
+            // pixel and the game's own Render Scale lowers the 3D world alone. Not benchmarked,
+            // so it is offered, asks first, and never becomes the default.
             [self record:@"iphone-duo" name:@"iPhone Duo" family:TKDeviceFamilyPhone
-                    chip:@"" width:0 height:0 highest:TKRenderQualityBalanced qualityScale:0 measured:NO
-                   notes:@"Model confirmed on device and in Xcode. Uses the current window, including fold and orientation changes. Performance is not benchmarked."
+                    chip:@"" width:0 height:0 highest:TKRenderQualityQuality qualityScale:3.0 measured:NO
+                   notes:@"Model confirmed on device and in Xcode. Uses the current window, including fold and orientation changes. Quality is the screen's native scale with the game's own Render Scale lowering the 3D world; not benchmarked, so Balanced stays the default."
                   models:@[@"iPhone19,4"]],
             // Measured on this project: the 12.9-inch M1 is "Dadpad", the device every
             // performance figure in this project was taken on.
@@ -232,9 +238,19 @@
 }
 
 - (TKDeviceProfile *)profileWithWidth:(CGFloat)width height:(CGFloat)height {
+    return [self profileWithWidth:width height:height screenScale:0];
+}
+
+- (TKDeviceProfile *)profileWithWidth:(CGFloat)width height:(CGFloat)height screenScale:(CGFloat)screenScale {
     if (self.family!=TKDeviceFamilyPhone || !isfinite(width) || !isfinite(height) || width<=0 || height<=0) return self;
+    // A phone that offers Quality renders it at the screen's real scale once that is known, and
+    // offers nothing at Quality when that scale is no more than Balanced's 2x (or past the
+    // runtime's 3x ceiling).
+    CGFloat qualityScale=self.qualityBackingScale;
+    if (self.highestQuality==TKRenderQualityQuality && isfinite(screenScale) && screenScale>0)
+        qualityScale=screenScale>2.0 && screenScale<=3.0 ? screenScale : 0;
     TKDeviceProfile *sized=[TKDeviceProfile record:self.identifier name:self.displayName family:self.family chip:self.chip
-        width:width height:height highest:self.highestQuality qualityScale:self.qualityBackingScale
+        width:width height:height highest:self.highestQuality qualityScale:qualityScale
         measured:self.measured notes:self.notes models:self.modelIdentifiers];
     sized.statedRecommendation=self.statedRecommendation;
     sized.qualityFinding=self.qualityFinding;
@@ -243,7 +259,8 @@
 
 - (CGFloat)backingScaleForQuality:(TKRenderQuality)quality {
     if (self.family==TKDeviceFamilyPhone)
-        return quality==TKRenderQualityPerformance ? 1.0 : quality==TKRenderQualityBalanced ? 2.0 : 0;
+        return quality==TKRenderQualityPerformance ? 1.0 : quality==TKRenderQualityBalanced ? 2.0
+             : self.highestQuality==TKRenderQualityQuality ? self.qualityBackingScale : 0;
 
     if (quality>TKRenderQualityBalanced && self.qualityBackingScale<=0) return 0;
     switch (quality) {
@@ -258,7 +275,8 @@
     // The default is never the ceiling. Quality is only offered where the hardware was measured,
     // and on this project the thing that measurement found was native rendering missing the
     // frame budget - so Quality stays a choice that asks first, and Balanced is what a device
-    // gets until its owner says otherwise. Unmeasured hardware has no Quality to offer at all.
+    // gets until its owner says otherwise. Unmeasured hardware has no Quality to offer at all,
+    // except the iPhone Duo (see its record), which still defaults to Balanced.
     // A record may state a lower default of its own (the 11-inch M5: Performance, as before).
     if (self.statedRecommendation>=0) return (TKRenderQuality)self.statedRecommendation;
     return self.highestQuality==TKRenderQualityQuality ? TKRenderQualityBalanced : self.highestQuality;

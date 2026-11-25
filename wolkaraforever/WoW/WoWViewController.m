@@ -1819,13 +1819,20 @@ static NSString *TKRenderQualityTitle(TKDeviceProfile *profile, TKRenderQuality 
     NSString *stored=[NSUserDefaults.standardUserDefaults stringForKey:TKDeviceProfileDefaultsKey];
     return stored.length?stored:nil;
 }
+// The panel's own pixels per point, which a phone's Quality renders at.
+- (CGFloat)screenNativeScale {
+    CGFloat scale=self.view.window.windowScene.screen.nativeScale;
+    return scale>0 ? scale : self.traitCollection.displayScale;
+}
 - (TKDeviceProfile *)selectedDeviceProfile {
     TKDeviceProfile *profile=[TKDeviceProfile resolvedProfileWithOverride:[self deviceProfileOverrideIdentifier]];
-    return [profile profileWithWidth:self.view.bounds.size.width height:self.view.bounds.size.height];
+    return [profile profileWithWidth:self.view.bounds.size.width height:self.view.bounds.size.height
+                         screenScale:[self screenNativeScale]];
 }
 - (TKDeviceProfile *)thisDeviceProfile {
     TKDeviceProfile *profile=[TKDeviceProfile profileForModelIdentifier:TKDeviceProfile.currentModelIdentifier];
-    return [profile profileWithWidth:self.view.bounds.size.width height:self.view.bounds.size.height];
+    return [profile profileWithWidth:self.view.bounds.size.width height:self.view.bounds.size.height
+                         screenScale:[self screenNativeScale]];
 }
 - (BOOL)deviceProfileIsThisDevice {
     return [[self selectedDeviceProfile].identifier isEqual:[self thisDeviceProfile].identifier];

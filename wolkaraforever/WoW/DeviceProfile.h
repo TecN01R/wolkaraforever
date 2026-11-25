@@ -52,7 +52,9 @@ typedef NS_ENUM(NSInteger, TKQualityFinding) {
 @property (nonatomic, readonly) CGFloat nativeWidth;
 @property (nonatomic, readonly) CGFloat nativeHeight;
 // The highest quality this device may be offered. Quality is only here when someone measured
-// it; a device that has not been measured is offered Balanced and no further.
+// it; a device that has not been measured is offered Balanced and no further. One exception, by
+// its owner's choice: the iPhone Duo offers Quality at its screen's native scale, unmeasured, so
+// the game's interface can be drawn pixel for pixel while its own Render Scale lowers the 3D.
 @property (nonatomic, readonly) TKRenderQuality highestQuality;
 // The backing scale for a quality, or 0 when this device may not be asked for it.
 @property (nonatomic, readonly) CGFloat qualityBackingScale;
@@ -87,6 +89,9 @@ typedef NS_ENUM(NSInteger, TKQualityFinding) {
 // A phone profile sized for the current UIKit window (including folds/rotation).
 // Returns a new record; the shared catalogue is immutable. iPad records are unchanged.
 - (TKDeviceProfile *)profileWithWidth:(CGFloat)width height:(CGFloat)height;
+// The same, with the screen's native scale: a phone that offers Quality renders it at exactly
+// that scale, or offers no Quality when it is not above Balanced's 2x. 0 keeps the record's own.
+- (TKDeviceProfile *)profileWithWidth:(CGFloat)width height:(CGFloat)height screenScale:(CGFloat)screenScale;
 
 // The backing scale for a quality on this profile: the value the runtime is given.
 - (CGFloat)backingScaleForQuality:(TKRenderQuality)quality;
