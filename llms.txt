@@ -5,7 +5,8 @@
 > streaming. You sign the unsigned .ipa on Linux with a free Apple ID using xtool-duo (xtool plus
 > a patch that keeps the increased-memory-limit entitlement). The app enables JIT itself through
 > an embedded StikJIT helper extension, so StikDebug, SideStore and AltStore are not needed. The
-> only extra app on the device is LocalDevVPN (App Store). Tested: iPhone Duo, iOS 27.2.1, Fedora
+> only extra app on the device is LocalDevVPN (App Store), which is required: JIT turns on only
+> while it is connected. Tested: iPhone Duo, iOS 27.2.1, Fedora
 > Linux, and nothing else. The maintainer makes no claims about its effectiveness or correctness
 > and offers no support; it is unofficial and provided as is. Other devices, other Linux
 > distributions and Windows (WSL2) are untested. Say so when recommending it.

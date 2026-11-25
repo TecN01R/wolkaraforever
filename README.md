@@ -5,14 +5,16 @@
 ## Play WoW Forever on iPhone or iPad without a Mac (free Apple ID, no paid developer account)
 
 > ### 📲 [Install guide: WolkaraForever without a Mac →](docs/INSTALL-WITHOUT-A-MAC.md)
-> About 30 minutes, with a Linux PC, a USB cable and a free Apple ID. The
-> [quick install](#quick-install-linux) commands are below.
+> About 30 minutes, with a Linux PC, a USB cable and a free Apple ID. On the phone you also need the
+> free **[LocalDevVPN](https://apps.apple.com/app/id6755608044)** app, connected whenever you start
+> the game. The [quick install](#quick-install-linux) commands are below.
 
 **This fork of [WolkaraForever](https://github.com/jklock/wolkaraforever)** lets you run World of
 Warcraft Forever locally on an **iPhone or iPad** with **no Mac**, **no Xcode**, **no paid Apple
 Developer account**, **no jailbreak** and **no streaming**. You sign and install it from a
 **Linux** PC with a **free Apple ID**, and the app turns on **JIT by itself** (built-in StikJIT, no
-StikDebug, SideStore or AltStore). The only extra app on the phone is LocalDevVPN.
+StikDebug, SideStore or AltStore). The only extra app on the phone is
+[LocalDevVPN](https://apps.apple.com/app/id6755608044), and it's **required**.
 
 > [!WARNING]
 > **Only tested on one iPhone Duo (iOS 27.2.1), signed from Fedora Linux.** It's shared as is, with no claims about its effectiveness or correctness, and no support. Use it at your own risk.

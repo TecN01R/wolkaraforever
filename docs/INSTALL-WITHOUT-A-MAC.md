@@ -8,7 +8,8 @@ Play **World of Warcraft Forever** (WoW Forever) on your iPhone or iPad with **W
 - **no StikDebug, SideStore or AltStore**: the app turns on **JIT** by itself (Built-in JIT);
 - you still get the **increased memory limit**, which stock xtool drops on free accounts.
 
-The only extra app on the phone is **LocalDevVPN** (free, App Store).
+You need one extra app on the phone: **[LocalDevVPN](https://apps.apple.com/app/id6755608044)**
+(free, App Store). **It's required:** the app can only turn on JIT while LocalDevVPN is connected.
 
 > [!WARNING]
 > **Only tested on one iPhone Duo (iOS 27.2.1), signed from Fedora Linux.** It's shared as is, with no claims about its effectiveness or correctness, and no support. Use it at your own risk.
@@ -46,6 +47,8 @@ no support.
 - An **iPhone or iPad** on iOS 17.4 or later, with about 80 GB free.
 - A **free Apple ID**. A spare Apple ID is fine; xtool signs in to Apple with it directly.
 - A **Linux PC** (x86-64) and a **USB cable** for the phone.
+- **[LocalDevVPN](https://apps.apple.com/app/id6755608044)** (free, App Store) on the phone.
+  **Required:** JIT only turns on while it's connected, and the game can't start without JIT.
 - A WoW Forever account. This project contains **no game files**; the app downloads the game.
 
 ## Step 1: set up the computer (once)
@@ -130,6 +133,13 @@ Don't share it: it gives developer access to your phone.
 Install [**LocalDevVPN**](https://apps.apple.com/app/id6755608044) from the App Store, open it, and
 tap **Connect** (allow the VPN configuration). It lets the app reach the phone's own developer
 service. It's a loopback connection: none of your traffic leaves the phone through it.
+
+> [!IMPORTANT]
+> Keep LocalDevVPN **connected whenever you open Tolkara**. Without it, JIT can't turn on and the
+> game won't start. Once the game is running, it no longer matters. iOS sometimes closes
+> LocalDevVPN in the background to free memory, so if Play says JIT isn't enabled, open LocalDevVPN
+> and connect it again. Untested tip: LocalDevVPN offers an "Enable" action in Shortcuts, so an
+> automation "When Tolkara is opened → LocalDevVPN: Enable" may do this for you.
 
 ## Step 7: play
 
