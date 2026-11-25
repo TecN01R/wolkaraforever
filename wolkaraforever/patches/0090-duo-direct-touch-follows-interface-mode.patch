@@ -1,0 +1,42 @@
+# WolkaraForever layer patch 0090 - direct touch follows the interface mode, Duo included
+#
+# Why: patch 0055 gates the mobile interface's direct touch (tap = left click, hold = right
+# click, drag, pinch zoom, several fingers on the game view) on WolkaraForeverInterfaceModeV1
+# reading exactly "ios". The launcher's "iOS on Duo" stores "iosduo" and "Automatic" stores
+# "auto", so on an iPhone Duo with the mode docs/IPHONE.md tells its owner to choose, the
+# toolbar and sticks were mobile (they ask AKInterfaceModeIsMobile) and the game view was not.
+# Now the gate asks the same function, which this adapter already links (TouchGamepad.m).
+# iPadOS, a missing value and unknown values stay exactly as before.
+#
+# Applies after: 0055-direct-touch-gestures.patch
+# Applies to: translation/AppKit/AppKit.m
+# Upstream: candidate.
+#
+diff --git a/translation/AppKit/AppKit.m b/translation/AppKit/AppKit.m
+--- a/translation/AppKit/AppKit.m
++++ b/translation/AppKit/AppKit.m
+@@ -5,6 +5,7 @@
+ #import "TouchControls.h"
+ #import "AKTouchEventPump.h"
+ #import "TouchGamepadLayout.h"
++#import "InterfaceMode.h"
+ 
+ // The guest screen's pixels per point, defined in Screens.m.
+ CGFloat AKGuestBackingScale(void);
+@@ -289,13 +290,13 @@ NSEventModifierFlags AKModifiersReconciled(NSEventModifierFlags held, NSEventMod
+ - (BOOL)ak_needsTrackingEvents;
+ @end
+ 
+-// The interface the user chose: "ios" is the mobile (iPhone/Duo) arrangement, anything
++// The interface the user chose, answered by InterfaceMode.m exactly as the toolbar and the
++// sticks ask it: "ios", "iosduo" and "auto" on a phone are the mobile arrangement; anything
+ // else - including a missing or hand-edited value - is iPadOS, the interface every release
+ // through v1.0.7 has had. Read on each use, so a value written between two guests in one
+ // process is seen by the second. The launcher owns the key; the layer only reads it.
+ static BOOL AKMobileInterface(void) {
+-    id value = [NSUserDefaults.standardUserDefaults objectForKey:@"WolkaraForeverInterfaceModeV1"];
+-    return [value isKindOfClass:NSString.class] && [(NSString *)value isEqualToString:@"ios"];
++    return AKInterfaceModeIsMobile();
+ }
+ 
+ @implementation AKHostView { CGPoint _last; NSEventModifierFlags _mods; BOOL _pressedRight, _pressedLeft, _pointerInside, _softwareCursor; UIImageView *_cursorView; UIPointerInteraction *_pointer; UIPointerStyle *_gamePointerStyle; unsigned _hoverUpdates, _pointerUpdates, _cursorVisibilityReasons; NSTimeInterval _pointerReportTime; CGPoint _cursorHotSpot;
