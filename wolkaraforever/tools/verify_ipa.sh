@@ -72,6 +72,11 @@ mode=$(plutil -extract TolkaraPreselectedExecutionMode raw "$app/Info.plist")
 runtime=$(plutil -extract TolkaraGuestRuntime raw "$app/Info.plist")
 [ "$mode" = external-jit ] || { echo "verify_ipa: expected external-jit, got $mode" >&2; exit 1; }
 [ "$runtime" = emulated ] || { echo "verify_ipa: expected emulated guest runtime, got $runtime" >&2; exit 1; }
+# Game Mode: what raises the memory limit once iOS turns it on (Info.plist, launcher).
+[ "$(plutil -extract LSApplicationCategoryType raw "$app/Info.plist" 2>/dev/null)" = public.app-category.games ] &&
+[ "$(plutil -extract GCSupportsGameMode raw "$app/Info.plist" 2>/dev/null)" = true ] || {
+    echo "verify_ipa: the app does not declare iOS Game Mode (games category and GCSupportsGameMode)" >&2; exit 1
+}
 
 entitlements="$tmp/entitlements.plist"
 codesign -d --entitlements :- "$app" > "$entitlements" 2>/dev/null
@@ -105,5 +110,6 @@ mkdir -p "$(dirname "$report")"
     echo "System root certificates: present ($roots_count)"
     echo "Entitlements: increased-memory-limit, extended-virtual-addressing"
     echo "Built-in JIT helper: WolkaraJITHelper.appex, StikJIT $stikjit_version"
+    echo "iOS Game Mode: declared (games category, GCSupportsGameMode)"
 } > "$report"
 echo "verify_ipa: PASS ($report)"

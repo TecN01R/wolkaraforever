@@ -22,8 +22,16 @@ connected.
 
 ## Every week
 
-Run `duo/install.sh` again before the 7-day free signature expires. The app, the game and the
-pairing file stay.
+Run `duo/install.sh` again before the 7-day free signature expires; it prints the date the
+signature ends. The app, the game and the pairing file stay.
+
+## Memory
+
+The free team's profile grants the increased memory limit (`duo/install.sh` says so). The app
+also declares iOS Game Mode, which iOS turns on a few seconds after the app comes to the front.
+With it, the limit is expected to rise from about 6 GB to about 8 GB. Playport measured that on
+a 12 GB iPhone; it is not yet confirmed on the Duo. To check, compare `footprint` plus
+`available` on the `memory checkpoint=` lines in `Documents/external-jit-diagnostics.log`.
 
 ## Every launch
 

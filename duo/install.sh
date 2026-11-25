@@ -66,15 +66,29 @@ timeout "${DUO_INSTALL_TIMEOUT:-600}" "$xtool_bin" install "${args[@]}" "$ipa" 2
 status=${PIPESTATUS[0]}
 [ "$status" -ne 124 ] || { echo "install: xtool gave no result in ${DUO_INSTALL_TIMEOUT:-600} s (phone asleep or out of reach?); see $log" >&2; exit 124; }
 [ "$status" -eq 0 ] || { echo "install: xtool failed ($status); see $log" >&2; exit "$status"; }
-# What Apple granted, from the profile it issued for this app: the entitlements the signed
-# app may hold. The memory limit the game gets depends on this line.
-granted=$("$xtool_bin" ds profiles list 2>/dev/null | grep -F 'entitlements:' | grep -F 'local.wolkaraforever.duo' | tail -1 || true)
+# What Apple granted, from the profiles it issued: the app's own (the entitlements the signed
+# app may hold; the memory limit the game gets depends on it) and when the signature ends. The
+# app's application-identifier ends in .local.wolkaraforever.duo; the helper's in .jithelper.
+profiles=$("$xtool_bin" ds profiles list 2>/dev/null || true)
+pick() {   # pick SUFFIX FIELD: FIELD of the profile whose application-identifier ends in SUFFIX
+    printf '%s\n' "$profiles" | awk -v suffix="$1\"" -v field="$2" '
+        /^- id:/ { if (match_ && value != "") print value; match_ = 0; value = "" }
+        index($0, "application-identifier") && index($0, suffix) { match_ = 1 }
+        $0 ~ "^ *" field ":" { value = substr($0, index($0, ":") + 2) }
+        END { if (match_ && value != "") print value }' | tail -1
+}
+granted=$(pick .local.wolkaraforever.duo entitlements)
 if [ -n "$granted" ]; then
-    echo "install: profile ${granted#*entitlements: }"
+    echo "install: profile $granted"
     case "$granted" in
         *increased-memory-limit*) echo "install: increased-memory-limit granted" ;;
         *) echo "install: increased-memory-limit NOT in the profile (default memory limit applies)" ;;
     esac
     case "$granted" in *extended-virtual-addressing*) echo "install: extended-virtual-addressing granted" ;; esac
 fi
+app_expiry=$(pick .local.wolkaraforever.duo "expiration date")
+helper_expiry=$(pick .local.wolkaraforever.duo.jithelper "expiration date")
+[ -z "$app_expiry" ] || echo "install: the app's signature ends ${app_expiry}; run this again before then"
+[ -z "$helper_expiry" ] || [ "$helper_expiry" = "$app_expiry" ] ||
+    echo "install: the JIT helper's signature ends ${helper_expiry}"
 echo "install: done. The free signature lasts 7 days; run this again before then to renew it."

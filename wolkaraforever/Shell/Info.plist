@@ -30,5 +30,12 @@
 	<array>
 		<string>audio</string>
 	</array>
+	<!-- iOS Game Mode: iOS turns it on a few seconds after a game comes to the front, and with the
+	     increased-memory-limit entitlement the app's memory limit rises with it (measured by
+	     Playport on a 12 GB iPhone, iOS 27: 6,144 MB before, 8,192 MB after). -->
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.games</string>
+	<key>GCSupportsGameMode</key>
+	<true/>
 </dict>
 </plist>
