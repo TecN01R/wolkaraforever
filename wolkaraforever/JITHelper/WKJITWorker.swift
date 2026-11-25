@@ -4,6 +4,9 @@
 import Foundation
 import StikJIT
 
+// Visible in the device's system log (process WolkaraJITHelper); never pairing data.
+private func helperLog(_ message: String) { NSLog("WolkaraJITHelper: %@", message) }
+
 /// The extension's principal class: receives the app's XPC endpoint and serves one worker.
 @objc(WKJITRequestHandler)
 final class JITRequestHandler: NSObject, NSExtensionRequestHandling {
@@ -11,9 +14,11 @@ final class JITRequestHandler: NSObject, NSExtensionRequestHandling {
     private static var connections: [NSXPCConnection] = []
 
     func beginRequest(with context: NSExtensionContext) {
+        helperLog("request received with \(context.inputItems.count) item(s)")
         // Same string as WK_JIT_ENDPOINT_KEY in WKJITProtocol.h.
         guard let item = context.inputItems.first as? NSExtensionItem,
               let endpoint = item.userInfo?["WKJITEndpoint"] as? NSXPCListenerEndpoint else {
+            helperLog("the request carried no endpoint; cancelling")
             context.cancelRequest(withError: NSError(domain: "WolkaraForever.JIT", code: 1, userInfo: [
                 NSLocalizedDescriptionKey: "The JIT request carried no endpoint.",
             ]))
@@ -27,6 +32,12 @@ final class JITRequestHandler: NSObject, NSExtensionRequestHandling {
         connection.invalidationHandler = { exit(0) }
         connection.resume()
         Self.connections.append(connection)
+        // The app's listener hears of this connection only when a message arrives on it.
+        let host = connection.remoteObjectProxyWithErrorHandler { error in
+            helperLog("could not reach the app: \(error.localizedDescription)")
+        } as? WKJITHostEvents
+        host?.helperReady()
+        helperLog("connected back to the app")
     }
 }
 
@@ -43,6 +54,7 @@ final class JITWorker: NSObject, WKJITWorker {
     }
 
     func enableJIT(forProcess pid: Int32, pairingFile: Data, reply: @escaping (String?) -> Void) {
+        helperLog("enable JIT requested for pid \(pid)")
         queue.async { [self] in
             let fileManager = FileManager.default
             // The pairing file exists on disk only for the length of this call.
@@ -62,8 +74,10 @@ final class JITWorker: NSObject, WKJITWorker {
                     preparationProgress: { [weak self] stage in self?.host?.jitStage(Self.describe(stage)) },
                     progress: { [weak self] line in self?.host?.jitLog(line) }
                 )
+                helperLog("JIT script finished")
                 reply(nil)
             } catch {
+                helperLog("failed: \(error.localizedDescription)")
                 reply(error.localizedDescription)
             }
         }

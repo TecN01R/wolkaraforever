@@ -253,6 +253,10 @@ NSString *WKBuiltInJITUnavailableReason(void) {
     });
 }
 
+- (void)helperReady {
+    WKLog("jit", @"built-in: the helper connected");
+}
+
 - (void)jitLog:(NSString *)line {
     WKLog("jit", @"script: %@", line);
 }

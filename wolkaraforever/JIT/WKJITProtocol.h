@@ -14,6 +14,9 @@ NS_ASSUME_NONNULL_BEGIN
 #define WK_JIT_ENDPOINT_KEY @"WKJITEndpoint"
 
 @protocol WKJITHostEvents
+// The helper's first message. An XPC connection reaches the app's listener only when a message
+// is sent on it, so the helper says hello as soon as it has connected.
+- (void)helperReady NS_SWIFT_NAME(helperReady());
 // A preparation stage ("Mounting the developer disk image 40 %"), for the app's status line.
 - (void)jitStage:(NSString *)stage NS_SWIFT_NAME(jitStage(_:));
 // One line of the JIT script's own log, for the app's diagnostics log.
