@@ -1,0 +1,107 @@
+# No-Mac fork: bring upstream WolkaraForever (jklock/wolkaraforever, main) into duo-baseline
+# every week, the same way duo/sync_upstream.sh does by hand.
+#
+# Upstream has new commits ->
+#   merge them on the runner (catalog regenerated, our 09xx patches checked against a fresh
+#   platform tree, docs checks) -> push the result to the branch upstream-sync -> build the .ipa
+#   from it (duo-ipa.yml, not published) -> when green, fast-forward duo-baseline to it and ask
+#   duo-ipa.yml to build and publish duo-baseline.
+#
+# It stops, changes nothing on duo-baseline and fails the run (GitHub then emails the
+# repository owner) when it can't do that safely:
+#   - a conflict outside the generated catalog, or our patches no longer apply;
+#   - upstream's new commits change workflow files (GitHub doesn't let the Actions token push
+#     those): run duo/sync_upstream.sh locally instead;
+#   - the build fails;
+#   - duo-baseline moved while it ran.
+
+name: Upstream sync
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"   # Mondays 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Merge upstream into duo-baseline
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: write   # push upstream-sync and duo-baseline
+      actions: write    # start duo-ipa.yml
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: duo-baseline
+          fetch-depth: 0
+
+      - name: Merge upstream
+        id: merge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/jklock/wolkaraforever.git
+          git fetch -q upstream main
+          new=$(git rev-list --count HEAD..upstream/main)
+          echo "new=$new" >> "$GITHUB_OUTPUT"
+          if [ "$new" = 0 ]; then
+            echo "Already up to date with upstream." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          {
+            echo "### Upstream has $new new commit(s)"
+            echo '```'; git log --oneline HEAD..upstream/main; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          workflows=$(git diff --name-only HEAD...upstream/main | grep '^\.github/workflows/' || true)
+          if [ -n "$workflows" ]; then
+            {
+              echo "**Not merged:** they change workflow files, which the Actions token may not push:"
+              echo '```'; echo "$workflows"; echo '```'
+              echo 'Run `duo/sync_upstream.sh` locally.'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          if ! duo/sync_upstream.sh --no-push > sync.log 2>&1; then
+            { echo "**Not merged:**"; echo '```'; cat sync.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          cat sync.log
+          echo "base=$(git rev-parse origin/duo-baseline)" >> "$GITHUB_OUTPUT"
+          git push -q --force origin HEAD:refs/heads/upstream-sync
+
+      - name: Build the merged .ipa
+        if: steps.merge.outputs.new != '0'
+        run: |
+          since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          gh workflow run duo-ipa.yml --ref upstream-sync
+          for _ in $(seq 30); do
+            sleep 10
+            id=$(gh run list --workflow duo-ipa.yml --branch upstream-sync --event workflow_dispatch \
+                   --json databaseId,createdAt --jq "[.[] | select(.createdAt >= \"$since\")][0].databaseId")
+            [ -n "$id" ] && [ "$id" != null ] && break
+          done
+          [ -n "$id" ] && [ "$id" != null ] || { echo "the build did not start" >> "$GITHUB_STEP_SUMMARY"; exit 1; }
+          echo "Build: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/$id" >> "$GITHUB_STEP_SUMMARY"
+          gh run watch "$id" --exit-status > /dev/null || {
+            echo "**Not merged:** the build of the merged tree failed." >> "$GITHUB_STEP_SUMMARY"; exit 1; }
+
+      - name: Fast-forward duo-baseline and publish
+        if: steps.merge.outputs.new != '0'
+        run: |
+          git fetch -q origin duo-baseline
+          [ "$(git rev-parse origin/duo-baseline)" = "${{ steps.merge.outputs.base }}" ] || {
+            echo "**Not merged:** duo-baseline moved while this ran; run it again." >> "$GITHUB_STEP_SUMMARY"; exit 1; }
+          git push -q origin HEAD:refs/heads/duo-baseline
+          git push -q origin --delete upstream-sync
+          gh workflow run duo-ipa.yml --ref duo-baseline -f publish=true
+          echo "**Merged** into duo-baseline; a release build has started." >> "$GITHUB_STEP_SUMMARY"

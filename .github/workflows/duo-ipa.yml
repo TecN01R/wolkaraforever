@@ -18,6 +18,10 @@ on:
       ref:
         description: "Branch, tag or commit to build (default: the branch the run starts on)"
         required: false
+      publish:
+        description: "Publish the build as a release (only for duo-baseline itself; used by upstream-sync.yml)"
+        type: boolean
+        default: false
   push:
     branches: [duo-baseline]
     paths-ignore: ["**.md", "docs/**", "duo/**", "llms.txt"]
@@ -106,17 +110,20 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      # A push to duo-baseline publishes; a manual run (which may build any ref) does not.
+      # A push to duo-baseline publishes. A manual run publishes only when asked to and when it
+      # built duo-baseline itself (upstream-sync.yml asks after its own push, which GitHub does
+      # not let trigger this workflow).
       - name: Publish the release
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || (inputs.publish && !inputs.ref && github.ref == 'refs/heads/duo-baseline')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          short=${GITHUB_SHA::7}
+          built=$(git rev-parse HEAD)
+          short=${built::7}
           tag="duo-$(date -u +%Y%m%d)-$short"
           cat > notes.md <<EOF
           Unsigned WolkaraForever for iPhone and iPad (External JIT with Built-in JIT), built from
-          ${GITHUB_SHA}. Sign and install it from Linux with a free Apple ID: no Mac and no paid
+          ${built}. Sign and install it from Linux with a free Apple ID: no Mac and no paid
           developer account. Step-by-step guide:
           ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/duo-baseline/docs/INSTALL-WITHOUT-A-MAC.md
 
@@ -129,7 +136,7 @@ jobs:
           SHA-256: $(cut -d' ' -f1 "$IPA.sha256")
           EOF
           gh release create "$tag" "$IPA" "$IPA.sha256" verify-report.txt \
-            --target "$GITHUB_SHA" --title "WolkaraForever no-Mac build $short" --notes-file notes.md --latest
+            --target "$built" --title "WolkaraForever no-Mac build $short" --notes-file notes.md --latest
 
       - name: Keep the build log if it failed
         if: failure()

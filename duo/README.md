@@ -46,6 +46,7 @@ This page covers what each script does and how this fork differs from upstream.
 | [push_pairing.sh](push_pairing.sh) | With no argument, runs `pymobiledevice3 lockdown remotepairing --pair` (promptless over the trusted USB connection) and copies the record, converted to StikJIT's format, into the app's private `Library/StikJIT/pairingFile.plist`. It can also copy in an existing Remote Pairing file. It refuses a lockdown record. |
 | [build_xtool.sh](build_xtool.sh) | Builds xtool-duo from source into `../tools/xtool-duo`. Most people download the AppImage instead. |
 | [xtool-increased-memory-limit.patch](xtool-increased-memory-limit.patch) | The xtool patch. It requests `INCREASED_MEMORY_LIMIT` for free teams. `XTL_TRY_FREE_EVA=1` also asks for extended virtual addressing (paid-only per Apple; a refusal stops the install). |
+| [sync_upstream.sh](sync_upstream.sh) | Merges upstream WolkaraForever (`jklock/wolkaraforever`, `main`) into `duo-baseline`. It regenerates the generated agent catalog instead of hand-merging it, stops on any other conflict, checks that the whole patch series (upstream's plus our `09xx`) still applies to a fresh platform tree, then pushes. `--check` changes nothing. Use it when the weekly job can't merge. |
 | [fetch_ipa.sh](fetch_ipa.sh) | For maintainers: downloads a CI run's artifact with `gh` and checks its shape. Users download the release instead. |
 
 The scripts look for the signer in `../tools/` (next to the clone): `xtool-duo`, then
@@ -57,5 +58,13 @@ The scripts look for the signer in `../tools/` (next to the clone): `xtool-duo`,
   every push to `duo-baseline`. It verifies the package and publishes it as a release.
 - [xtool-duo.yml](../.github/workflows/xtool-duo.yml) builds the xtool-duo AppImage on Ubuntu, the
   way xtool builds its own, and publishes it on the `xtool-duo` release.
+- [upstream-sync.yml](../.github/workflows/upstream-sync.yml) runs every Monday. It merges new
+  upstream commits, builds the result on a side branch, and only when that's green moves
+  `duo-baseline` forward and publishes a release. A real conflict, a failed build, or upstream
+  changes to workflow files (which GitHub doesn't let the Actions token push) stop it without
+  changing anything. The run then fails, so GitHub notifies the owner; finish with
+  `duo/sync_upstream.sh`.
+- Our own patches are numbered `09xx`, so upstream's sequence (`00xx`) never collides with them and
+  they always apply last.
 - No Apple credential, certificate, profile, pairing record or device identifier is used in CI or
   committed. Signing happens only on your own computer.
