@@ -20,7 +20,7 @@ on:
         required: false
   push:
     branches: [duo-baseline]
-    paths-ignore: ["**.md", "docs/**", "duo/**"]
+    paths-ignore: ["**.md", "docs/**", "duo/**", "llms.txt"]
 
 permissions:
   contents: read
@@ -119,6 +119,9 @@ jobs:
           ${GITHUB_SHA}. Sign and install it from Linux with a free Apple ID: no Mac and no paid
           developer account. Step-by-step guide:
           ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/duo-baseline/docs/INSTALL-WITHOUT-A-MAC.md
+
+          Only tested on one iPhone Duo (iOS 27.2.1). Provided as is: no claims about its effectiveness
+          or correctness, and no support. Unofficial, not affiliated with Blizzard, Apple or upstream.
 
           Contains no game files. Embeds StikJIT 2.0.1 unmodified (MPL-2.0); its source is at
           https://github.com/StikDebug/StikJIT/tree/2.0.1.

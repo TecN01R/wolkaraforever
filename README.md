@@ -10,13 +10,16 @@ Developer account**, **no jailbreak** and **no streaming**. You sign and install
 **Linux** PC with a **free Apple ID**, and the app turns on **JIT by itself** (built-in StikJIT, no
 StikDebug, SideStore or AltStore). The only extra app on the phone is LocalDevVPN.
 
+> [!WARNING]
+> **Only tested on one iPhone Duo (iOS 27.2.1), signed from Fedora Linux.** It's shared as is, with no claims about its effectiveness or correctness, and no support. Use it at your own risk.
+
 **→ Step-by-step guide: [Install WolkaraForever without a Mac](docs/INSTALL-WITHOUT-A-MAC.md)**
 
 | | |
 | --- | --- |
 | Download the app (unsigned `.ipa`) | [Latest release](https://github.com/TecN01R/wolkaraforever/releases/latest) |
 | Download the signer for free Apple IDs (`xtool-duo`, Linux AppImage) | [xtool-duo release](https://github.com/TecN01R/wolkaraforever/releases/tag/xtool-duo) |
-| Tested on | iPhone Duo, iOS 27.2.1, signed from Fedora Linux. Other devices and distributions are expected to work, but aren't tested yet |
+| Tested on | Only one iPhone Duo, iOS 27.2.1, signed from Fedora Linux. Nothing else is tested, and no claim is made for any other device or system |
 | Keeps | the increased memory limit, game downloads and updates, add-ons, touch controls, your data across the weekly re-signing |
 
 In short, on Linux (the [guide](docs/INSTALL-WITHOUT-A-MAC.md) explains every step):
@@ -35,7 +38,8 @@ duo/push_pairing.sh                                 # once: lets the app turn on
 # on the phone: install LocalDevVPN from the App Store, connect it, open "Tolkara", tap Play
 ```
 
-Not affiliated with Blizzard or Apple. This project contains no game files; you need your own game
+Unofficial: not affiliated with Blizzard, Apple or the upstream WolkaraForever project. Provided as is,
+without warranty (see [LICENSE](LICENSE)) and without support. This project contains no game files; you need your own game
 account.
 
 ---

@@ -6,7 +6,7 @@
 #
 # Built exactly as xtool builds its own release AppImages (xtool's .github/workflows/release.yml:
 # `docker compose run --build --rm xtool Linux/build.sh`), at the xtool commit duo/build_xtool.sh
-# pins. No Apple credential is used here.
+# pins. No Apple credential is used here. Editing only this file does not rebuild: run it by hand.
 
 name: xtool-duo AppImage
 
@@ -17,7 +17,6 @@ on:
     paths:
       - duo/xtool-increased-memory-limit.patch
       - duo/build_xtool.sh
-      - .github/workflows/xtool-duo.yml
 
 permissions:
   contents: read
@@ -80,6 +79,9 @@ jobs:
           AppImage. Use it in place of stock xtool to sign WolkaraForever with a free Apple ID while
           keeping the increased memory limit. Guide:
           ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/duo-baseline/docs/INSTALL-WITHOUT-A-MAC.md
+
+          Only tested with one iPhone Duo, from Fedora Linux. Provided as is: no claims about its
+          effectiveness or correctness, and no support. Not affiliated with xtool's authors.
 
           SHA-256: $(cut -d' ' -f1 xtool-duo-x86_64.AppImage.sha256)
           EOF

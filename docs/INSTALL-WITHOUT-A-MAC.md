@@ -10,6 +10,9 @@ Play **World of Warcraft Forever** (WoW Forever) on your iPhone or iPad with **W
 
 The only extra app on the phone is **LocalDevVPN** (free, App Store).
 
+> [!WARNING]
+> **Only tested on one iPhone Duo (iOS 27.2.1), signed from Fedora Linux.** It's shared as is, with no claims about its effectiveness or correctness, and no support. Use it at your own risk.
+
 The steps take about 30 minutes, plus the game download (about 70 GB, on the phone).
 
 ## What works today
@@ -17,13 +20,14 @@ The steps take about 30 minutes, plus the game download (about 70 GB, on the pho
 | | Status |
 | --- | --- |
 | iPhone Duo, iOS 27.2.1, signed from Fedora 44 Linux | **Tested**: JIT, game start, login and gameplay work; increased memory limit granted |
-| Other iPhones and iPads on iOS 17.4 or later | Expected to work; **not tested yet** |
-| Other Linux distributions (Ubuntu, Debian, Arch…) | Expected to work; **not tested yet** |
+| Other iPhones and iPads | **Not tested.** No claim either way |
+| Other Linux distributions (Ubuntu, Debian, Arch…) | **Not tested.** No claim either way |
 | Windows, through WSL2 with USB passthrough | Possible in principle (xtool supports it); **not tested** |
 | macOS | Not needed. If you have a Mac, upstream's [Mac route](INSTALLATION.md) also works |
 
-Please [open an issue](https://github.com/TecN01R/wolkaraforever/issues) with what happened on your
-device, whether it worked or not.
+You may [open an issue](https://github.com/TecN01R/wolkaraforever/issues) to share what happened on
+your device, but there's no support and no reply is promised. This is unofficial: not affiliated
+with Blizzard, Apple or the upstream WolkaraForever project.
 
 ## What you need
 
