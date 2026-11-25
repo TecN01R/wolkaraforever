@@ -112,6 +112,11 @@ static NSString *const AKChatComposerEnabledDefaultsKey = @"AKChatComposerEnable
 // Built-in JIT: the acquisition in progress, and its status alert.
 @property(nonatomic,strong,nullable) WKBuiltInJIT *builtInJIT;
 @property(nonatomic,strong,nullable) UIAlertController *builtInJITStatus;
+// The app Play is waiting to start once Built-in JIT finishes (nil for a quiet attempt), the
+// latest stage, and when the last attempt began (quiet attempts are spaced out).
+@property(nonatomic,strong,nullable) TKApp *builtInJITPendingApp;
+@property(nonatomic,copy,nullable) NSString *builtInJITStage;
+@property(nonatomic) NSTimeInterval builtInJITLastAttempt;
 // A plain launch (library shown, no development arguments): a game that
 // closes cleanly ends the process so the next tap starts another app.
 @property(nonatomic) BOOL uiSession;
@@ -533,6 +538,7 @@ static NSString *AKAudioStateDescription(void) {
     [self askForTheMicrophoneOnce];
     [self askForSpeechOnce];
     [self reserveExecutableMemory];
+    [self prepareBuiltInJITQuietly];
     if (self.executionMode==TKExecutionModeExternalJIT) WKExternalJITDiagnosticsCheckpoint(@"lifecycle-foreground");
 }
 
@@ -1180,42 +1186,73 @@ static NSString *AKAudioStateDescription(void) {
 // Built-in JIT: the bundled StikJIT helper attaches, this process reserves its arena through
 // the same JIT26 breakpoints an outside enabler services, the helper detaches, and the launch
 // continues through launchExternalJITApp's own checks. A failure leaves the session usable.
-- (void)acquireBuiltInJITThenLaunch:(TKApp *)app {
+//
+// It runs quietly whenever the app comes to the foreground, not only from Play: the arena then
+// lasts for the session, so JIT can be acquired while LocalDevVPN works (on cellular only in
+// Airplane Mode) and the launcher can go online afterwards for its update check and Play.
+- (void)startBuiltInJIT {
     if(self.builtInJIT) return;
-    NSString *unavailable=WKBuiltInJITUnavailableReason();
-    if(unavailable) {
-        [self alert:WKLocalized(@"shell.jit.title") message:[NSString stringWithFormat:@"%@\n\n%@",unavailable,WKLocalized(@"shell.jit.message")]];
-        return;
-    }
-    UIAlertController *status=[UIAlertController alertControllerWithTitle:@"Enabling JIT" message:@"Starting the JIT helper"
-                                                          preferredStyle:UIAlertControllerStyleAlert];
-    self.builtInJITStatus=status;
-    UIViewController *presenter=self.window.rootViewController;
-    while(presenter.presentedViewController) presenter=presenter.presentedViewController;
-    [presenter presentViewController:status animated:YES completion:nil];
+    self.builtInJITLastAttempt=NSProcessInfo.processInfo.systemUptime;
+    self.builtInJITStage=nil;
     self.builtInJIT=[WKBuiltInJIT new];
     __weak AKHostSceneDelegate *weakSelf=self;
     [self.builtInJIT acquireWithReserve:^BOOL{
         return ReserveArenaLogged();
     } progress:^(NSString *stage) {
+        weakSelf.builtInJITStage=stage;
         weakSelf.builtInJITStatus.message=stage;
     } completion:^(NSString *failure) {
+        [weakSelf builtInJITFinished:failure];
+    }];
+}
+- (void)builtInJITFinished:(NSString *)failure {
+    self.builtInJIT=nil;
+    TKApp *app=self.builtInJITPendingApp;
+    self.builtInJITPendingApp=nil;
+    UIAlertController *shown=self.builtInJITStatus;
+    self.builtInJITStatus=nil;
+    if(!app) {
+        WKLog("jit",@"built-in: ahead of Play: %@",failure?@"not ready; Play will try again":@"JIT ready");
+        return;
+    }
+    __weak AKHostSceneDelegate *weakSelf=self;
+    void (^next)(void)=^{
         AKHostSceneDelegate *strongSelf=weakSelf;
         if(!strongSelf) return;
-        strongSelf.builtInJIT=nil;
-        UIAlertController *shown=strongSelf.builtInJITStatus;
-        strongSelf.builtInJITStatus=nil;
-        void (^next)(void)=^{
-            if(failure || !PreparedFromOutside()) {
-                [strongSelf alert:@"JIT Not Enabled" message:failure ?: @"No executable memory was prepared."];
-                return;
-            }
-            WKLog("jit",@"built-in JIT ready; starting %@",app.name);
-            [strongSelf launchExternalJITApp:app];
-        };
-        if(shown.presentingViewController) [shown dismissViewControllerAnimated:YES completion:next];
-        else next();
-    }];
+        if(failure || !PreparedFromOutside()) {
+            [strongSelf alert:@"JIT Not Enabled" message:failure ?: @"No executable memory was prepared."];
+            return;
+        }
+        WKLog("jit",@"built-in JIT ready; starting %@",app.name);
+        [strongSelf launchExternalJITApp:app];
+    };
+    if(shown.presentingViewController) [shown dismissViewControllerAnimated:YES completion:next];
+    else next();
+}
+// Foreground: prepare JIT before Play is pressed, silently. Spaced out, never while a game runs.
+- (void)prepareBuiltInJITQuietly {
+    if(self.executionMode!=TKExecutionModeExternalJIT || PreparedFromOutside() || self.builtInJIT ||
+       self.sessionUsed || !CanStartApps() || WKBuiltInJITUnavailableReason()) return;
+    if(self.builtInJITLastAttempt>0 && NSProcessInfo.processInfo.systemUptime-self.builtInJITLastAttempt<20) return;
+    WKLog("jit",@"built-in: preparing JIT ahead of Play");
+    [self startBuiltInJIT];
+}
+// Play without JIT: wait for the attempt already running, or start one, then launch.
+- (void)acquireBuiltInJITThenLaunch:(TKApp *)app {
+    if(self.builtInJITPendingApp) return;
+    NSString *unavailable=WKBuiltInJITUnavailableReason();
+    if(unavailable) {
+        [self alert:WKLocalized(@"shell.jit.title") message:[NSString stringWithFormat:@"%@\n\n%@",unavailable,WKLocalized(@"shell.jit.message")]];
+        return;
+    }
+    self.builtInJITPendingApp=app;
+    UIAlertController *status=[UIAlertController alertControllerWithTitle:@"Enabling JIT"
+        message:self.builtInJITStage ?: @"Starting the JIT helper" preferredStyle:UIAlertControllerStyleAlert];
+    self.builtInJITStatus=status;
+    UIViewController *presenter=self.window.rootViewController;
+    while(presenter.presentedViewController) presenter=presenter.presentedViewController;
+    [presenter presentViewController:status animated:YES completion:nil];
+    [self startBuiltInJIT];
 }
 // External JIT: a tool outside the app prepares memory.
 - (void)launchExternalJITApp:(TKApp *)app {

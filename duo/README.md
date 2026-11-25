@@ -27,16 +27,27 @@ pairing file stay.
 
 ## Every launch
 
-1. Connect LocalDevVPN. Use Wi-Fi, or turn cellular data on, connect, then enable Airplane Mode.
-2. Press **Play**.
-
-The app shows its JIT steps:
+The app sets up JIT by itself whenever it comes to the foreground, while LocalDevVPN is
+connected. Steps:
 - reaching the device;
 - the developer disk image, downloaded once and mounted once per reboot;
 - preparing executable memory.
 
-The game then starts as before. A failure says which step failed. The log is `Documents/` →
-Settings → Diagnostics and logs.
+JIT then lasts until the app closes, so **Play** starts the game straight away. If the app
+could not prepare JIT ahead of time, Play runs those steps itself and shows them.
+
+**On Wi-Fi:** keep LocalDevVPN connected, open the app, and press Play.
+
+**On cellular (5G).** LocalDevVPN cannot reach the device over cellular (an iOS restriction),
+and the launcher needs the network for its update check before it offers Play:
+1. Turn mobile data on, connect LocalDevVPN, then turn on **Airplane Mode**.
+2. Open the app. JIT is prepared within a few seconds. The update check fails for now; that is
+   expected.
+3. Turn **Airplane Mode** off. Tap **Retry**: the update check runs over cellular, and Play appears.
+4. Press **Play**.
+
+A failure says which step failed. The log is under Settings → Diagnostics and logs
+(`Documents/wolkaraforever.log`, lines tagged `[jit]`).
 
 ## Third-party code
 
