@@ -882,8 +882,6 @@
 /* ---- Saved game password, experimental Battle.net login ---- */
 "login.status.onSaved" = "On · password saved";
 "login.savedPassword.signIn" = "Sign in with the saved password";
-"login.savedPassword.setup" = "Start at the game's login to save a password";
-"login.browserOnce" = "Sign in through the browser this time";
 "login.savedPassword.forget" = "Forget the saved password";
 "login.savedPassword.forgotten.title" = "Saved password forgotten";
 "login.savedPassword.forgotten.message" = "The password kept on this device was deleted. The game asks for it again.";

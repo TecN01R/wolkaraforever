@@ -879,8 +879,6 @@
 /* ---- Saved game password, experimental Battle.net login ---- */
 "login.status.onSaved" = "An · Passwort gesichert";
 "login.savedPassword.signIn" = "Mit dem gesicherten Passwort anmelden";
-"login.savedPassword.setup" = "Am Login des Spiels starten, um ein Passwort zu sichern";
-"login.browserOnce" = "Dieses Mal über den Browser anmelden";
 "login.savedPassword.forget" = "Gesichertes Passwort löschen";
 "login.savedPassword.forgotten.title" = "Gesichertes Passwort gelöscht";
 "login.savedPassword.forgotten.message" = "Das auf diesem Gerät gesicherte Passwort wurde gelöscht. Das Spiel fragt es erneut ab.";

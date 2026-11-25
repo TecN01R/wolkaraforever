@@ -287,8 +287,6 @@ static dispatch_queue_t TKForeverUIQueue(void) {
     // Set for exactly one start by the login sheet's "sign in with the saved password": that
     // launch must reach the game's own password field instead of opening the sign-in browser.
     BOOL _useSavedPassword;
-    // Fork: the login sheet asked for the browser for one start although a password is saved.
-    BOOL _useBrowserOnce;
     NSString *_backupsDirectory;
     UIView *_markView;
     NSLayoutConstraint *_markCap;
@@ -835,17 +833,6 @@ static dispatch_queue_t TKForeverUIQueue(void) {
     // asks for a password itself, and the keyboard's key types the one kept on this device.
     BOOL savedPassword=_useSavedPassword && [app.profile isEqual:@"wow-forever"];
     _useSavedPassword=NO;
-    // Fork: once a password is saved, Play itself takes that way in. Opening the browser on every
-    // Play made the saved password save nothing; the login sheet still offers the browser for one
-    // start. A ticket that is already waiting is used as before.
-    BOOL browserOnce=_useBrowserOnce;
-    _useBrowserOnce=NO;
-    if (!savedPassword && !browserOnce && [app.profile isEqual:@"wow-forever"] &&
-        [NSUserDefaults.standardUserDefaults boolForKey:@"WoWBrowserLogin"] &&
-        ![TKBattleNetSession isReady] && [TKBattleNetSavedPassword hasSavedPassword]) {
-        WKLog("battle-login", @"Play requested: a password is saved, starting at the game's own login");
-        savedPassword=YES;
-    }
     if (!savedPassword && [NSUserDefaults.standardUserDefaults boolForKey:@"WoWBrowserLogin"] &&
         [app.profile isEqual:@"wow-forever"] && ![TKBattleNetSession isReady]) {
         WKLog("battle-login", @"Play requested: opening experimental sign-in");
@@ -1390,22 +1377,6 @@ static dispatch_queue_t TKForeverUIQueue(void) {
     _useSavedPassword=YES;
     [self primaryAction];
 }
-// Fork: the first save without a browser trip. The game starts at its own login screen, where the
-// keyboard's key offers to save a password the first time it is tapped.
-- (void)startAtGameLoginToSavePassword {
-    if (![self browserLoginAllowed] || _installation.state!=TKWoWInstallationReady) return;
-    WKLog("battle-login", @"starting at the game's own login to save a password");
-    [TKBattleNetSession clear];
-    _useSavedPassword=YES;
-    [self primaryAction];
-}
-// Fork: the browser for one start, for when the saved password is not wanted this time.
-- (void)signInWithBrowserOnce {
-    if (![self browserLoginAllowed] || _installation.state!=TKWoWInstallationReady) return;
-    WKLog("battle-login", @"the browser was asked for this start");
-    _useBrowserOnce=YES;
-    [self primaryAction];
-}
 - (void)forgetSavedPassword {
     [TKBattleNetSavedPassword forget];
     [self render];
@@ -1424,15 +1395,6 @@ static dispatch_queue_t TKForeverUIQueue(void) {
         [sheet addAction:[UIAlertAction actionWithTitle:WKLocalized(@"login.savedPassword.signIn")
             style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
             [self signInWithSavedPassword];
-        }]];
-        [sheet addAction:[UIAlertAction actionWithTitle:WKLocalized(@"login.browserOnce")
-            style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-            [self signInWithBrowserOnce];
-        }]];
-    } else if (enabled) {
-        [sheet addAction:[UIAlertAction actionWithTitle:WKLocalized(@"login.savedPassword.setup")
-            style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-            [self startAtGameLoginToSavePassword];
         }]];
     }
     if (enabled) {

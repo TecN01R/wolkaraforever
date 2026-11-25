@@ -883,8 +883,6 @@
 /* ---- Saved game password, experimental Battle.net login ---- */
 "login.status.onSaved" = "Activé · mot de passe enregistré";
 "login.savedPassword.signIn" = "Se connecter avec le mot de passe enregistré";
-"login.savedPassword.setup" = "Démarrer sur l'écran de connexion du jeu pour enregistrer un mot de passe";
-"login.browserOnce" = "Se connecter par le navigateur cette fois";
 "login.savedPassword.forget" = "Oublier le mot de passe enregistré";
 "login.savedPassword.forgotten.title" = "Mot de passe enregistré oublié";
 "login.savedPassword.forgotten.message" = "Le mot de passe conservé sur cet appareil a été supprimé. Le jeu le redemandera.";
