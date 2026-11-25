@@ -115,15 +115,17 @@ int main(void) {
             Check([TKDeviceProfile profileForModelIdentifier:model]==TKDeviceProfile.fallbackProfile,
                   [NSString stringWithFormat:@"%@ is not claimed by the measured record", model]);
 
-        // --- Quality is offered only where it was measured: the 12.9-inch M1 and the 11-inch M5
+        // --- Quality is offered only where it was measured: the 12.9-inch M1 and the 11-inch M5.
+        // The one exception is the iPhone Duo, at its owner's choice, at the screen's own scale.
         NSMutableArray<NSString *> *offersQuality=[NSMutableArray new];
         for (TKDeviceProfile *profile in profiles) {
             if (profile.highestQuality!=TKRenderQualityQuality) continue;
             [offersQuality addObject:profile.identifier];
+            if ([profile.identifier isEqual:@"iphone-duo"]) continue;
             Check(profile.measured, [NSString stringWithFormat:@"%@ offers Quality only because it was measured", profile.identifier]);
         }
-        Check([offersQuality isEqualToArray:(@[@"ipad-pro-12.9-m1",@"ipad-pro-11-m5"])],
-              @"exactly the two measured iPads offer Quality");
+        Check([offersQuality isEqualToArray:(@[@"iphone-duo",@"ipad-pro-12.9-m1",@"ipad-pro-11-m5"])],
+              @"exactly the two measured iPads and the Duo offer Quality");
         TKDeviceProfile *m4=[TKDeviceProfile profileForModelIdentifier:@"iPad16,3"];
         Check([m4.identifier isEqual:@"ipad-pro-11-m4"] && m4.highestQuality==TKRenderQualityBalanced,
               @"the 11-inch M4, the same panel size, still stops at Balanced");
