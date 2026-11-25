@@ -2,16 +2,21 @@
 # Build xtool-duo: upstream xtool plus duo/xtool-increased-memory-limit.patch, which makes a free
 # team request the increased-memory-limit capability that stock xtool silently drops.
 #
+# Most people do not need this: download the ready-made AppImage from this repository's
+# "xtool-duo" release instead (docs/INSTALL-WITHOUT-A-MAC.md). Build it yourself to check it.
+#
 # usage: duo/build_xtool.sh
 #   Output: ../tools/xtool-duo (next to this clone). Your own `xtool` is not touched.
-#   Needs: git, swift (tested with 6.4.3 via swiftly), dnf, rpm2cpio. No root: the
-#   libimobiledevice/libplist/libusbmuxd headers come from the matching -devel RPMs, unpacked
-#   into ../tools/devroot rather than installed. The build is several GB; on this machine record
-#   it in ~/.claude/shared/machine-resources.md first.
+#   Needs: git, a Swift 6.4 toolchain (https://swift.org/install/linux), and the libimobiledevice,
+#   libplist and libusbmuxd development headers: install them with your package manager
+#   (Debian/Ubuntu: libimobiledevice-dev libplist-dev libusbmuxd-dev; Fedora: the -devel
+#   packages). On Fedora without root, the -devel RPMs are unpacked into ../tools/devroot instead.
+#   The build takes several GB of disk and memory; DUO_BUILD_JOBS limits its parallel jobs.
 set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
 top=$(cd "$here/.." && pwd)
-src=$top/upstream/xtool
+src=${DUO_XTOOL_SRC:-$top/upstream/xtool}
+[ -d "$src/.git" ] || src=${DUO_XTOOL_SRC:-$top/tools/xtool-src}
 devroot=$top/tools/devroot
 base=9f7663744778d9b9449ab3fcee9170b0d1e55eaf   # the xtool commit the patch was made against
 
@@ -24,8 +29,14 @@ if ! git -C "$src" apply --reverse --check "$here/duo/xtool-increased-memory-lim
     git -C "$src" apply "$here/duo/xtool-increased-memory-limit.patch"
 fi
 
-# Headers for the system libraries xtool links, matching the installed runtime packages.
-if [ ! -f "$devroot/usr/lib64/pkgconfig/libimobiledevice-1.0.pc" ]; then
+# Headers for the system libraries xtool links, matching the installed runtime packages: the
+# system's own when installed, else (Fedora, no root) unpacked from the -devel RPMs.
+if pkg-config --exists libimobiledevice-1.0 libplist-2.0 libusbmuxd-2.0 2>/dev/null; then
+    :
+elif ! command -v dnf >/dev/null || ! command -v rpm2cpio >/dev/null; then
+    echo "build_xtool: install the libimobiledevice, libplist and libusbmuxd development packages" >&2
+    exit 1
+elif [ ! -f "$devroot/usr/lib64/pkgconfig/libimobiledevice-1.0.pc" ]; then
     mkdir -p "$devroot/rpms"
     ( cd "$devroot/rpms" && dnf download --arch x86_64 libplist-devel libusbmuxd-devel \
         libimobiledevice-glue-devel libimobiledevice-devel )

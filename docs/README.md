@@ -4,6 +4,10 @@
 
 Use this guide to install WolkaraForever and manage a Forever installation.
 
+**No Mac or paid developer account?** Follow
+[Install WolkaraForever without a Mac](INSTALL-WITHOUT-A-MAC.md): Linux, a free Apple ID and
+built-in JIT.
+
 1. [Install WolkaraForever](INSTALLATION.md) to prepare your Mac and device, build the app, and start it for the first time.
 2. [Build and run WolkaraForever](BUILDING.md) to see how a build is assembled, which execution
    modes a build offers, and how to run, package, and verify it.

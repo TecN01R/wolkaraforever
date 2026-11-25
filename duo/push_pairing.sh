@@ -3,23 +3,52 @@
 # JIT reads it: Library/StikJIT/pairingFile.plist inside the app's own container (not the
 # Files-visible Documents folder). The file never leaves this computer and the phone.
 #
-# usage: duo/push_pairing.sh <pairing-file.plist>
-#   Make the file from the terminal on iOS 27 (no cable):
-#     pymobiledevice3 remote pair-host --name "WolkaraForever (Fedora)"
-#   then on the phone Settings > Developer > Paired Macs > Other Devices > that name > Pair, and
-#   type the code it prints. Pass the record it reports (~/.pymobiledevice3/remote_<udid>.plist);
-#   it is converted to StikJIT's format here. An idevice_pair "Remote pairing" file works as is.
-#   Or, with no interaction at all, over the already-trusted lockdown connection:
-#     pymobiledevice3 lockdown remotepairing --pair   (record in ~/.local/share/pymobiledevice3/)
-#   A lockdown pairing record (the kind usbmuxd keeps in /var/lib/lockdown) is refused: StikJIT
-#   2.x needs the Remote Pairing kind.
+# usage: duo/push_pairing.sh                 make the pairing and copy it in (the usual way)
+#        duo/push_pairing.sh <pairing.plist>  copy in a pairing file you already have
+#
+#   With no file: runs `pymobiledevice3 lockdown remotepairing --pair` over the connection the
+#   phone already trusts (USB, or netmuxd). That is promptless, does nothing when this computer
+#   is already paired, and leaves the record in ~/.local/share/pymobiledevice3/remote_<UDID>.plist,
+#   which is then converted to StikJIT's format and copied in.
+#   A file can also be an idevice_pair "Remote pairing" file, or the record
+#   `pymobiledevice3 remote pair-host` writes. A lockdown pairing record (the kind usbmuxd keeps
+#   in /var/lib/lockdown) is refused: StikJIT 2.x needs the Remote Pairing kind.
 #   DUO_BUNDLE_ID  the installed app's identifier (default: the one duo/install.sh installs)
-#   USBMUXD_SOCKET_ADDRESS  as in duo/install.sh (default: the private netmuxd on :27099 if up)
+#   DUO_XTOOL      the xtool that installed it (default: as duo/install.sh picks it)
+#   USBMUXD_SOCKET_ADDRESS  as in duo/install.sh (default: a netmuxd on :27099 if up, else USB)
 set -euo pipefail
+here=$(cd "$(dirname "$0")/.." && pwd)
 pairing=${1:-}
-[ -n "$pairing" ] && [ -f "$pairing" ] || { echo "usage: duo/push_pairing.sh <pairing-file.plist>" >&2; exit 2; }
-bundle=${DUO_BUNDLE_ID:-XTL-$(${DUO_XTOOL:-xtool} auth status 2>/dev/null | sed -n 's/^- Team ID: //p').local.wolkaraforever.duo}
-case "$bundle" in XTL-.*) echo "push_pairing: cannot tell the team ID; set DUO_BUNDLE_ID" >&2; exit 1;; esac
+[ -z "$pairing" ] || [ -f "$pairing" ] || { echo "usage: duo/push_pairing.sh [pairing-file.plist]" >&2; exit 2; }
+xtool_bin=${DUO_XTOOL:-}
+if [ -z "$xtool_bin" ]; then
+    xtool_bin=xtool
+    for candidate in "$(cd "$here/.." && pwd)/tools/xtool-duo" \
+                     "$(cd "$here/.." && pwd)/tools/xtool-duo-$(uname -m).AppImage"; do
+        [ -x "$candidate" ] && { xtool_bin=$candidate; break; }
+    done
+fi
+bundle=${DUO_BUNDLE_ID:-XTL-$("$xtool_bin" auth status 2>/dev/null | sed -n 's/^- Team ID: //p').local.wolkaraforever.duo}
+case "$bundle" in XTL-.*) echo "push_pairing: cannot tell the team ID (is xtool logged in?); set DUO_BUNDLE_ID" >&2; exit 1;; esac
+
+if [ -z "${USBMUXD_SOCKET_ADDRESS:-}" ] && ss -ltn 2>/dev/null | grep -q '127\.0\.0\.1:27099 '; then
+    export USBMUXD_SOCKET_ADDRESS=127.0.0.1:27099
+fi
+udid=$(timeout 30 pymobiledevice3 usbmux list 2>/dev/null | python3 -I -c '
+import json, sys
+try: devices = json.load(sys.stdin)
+except Exception: devices = []
+ids = sorted({d.get("UniqueDeviceID") or d.get("Identifier") or "" for d in devices} - {""})
+print(ids[0] if len(ids) == 1 else "")' || true)
+[ -n "$udid" ] || {
+    echo "push_pairing: the phone is not reachable (or more than one is); connect it by USB, unlock it, retry" >&2; exit 1
+}
+if [ -z "$pairing" ]; then
+    echo "push_pairing: pairing this computer with the phone for JIT (no prompt; skipped if already paired)"
+    timeout 120 pymobiledevice3 lockdown remotepairing --pair >/dev/null
+    pairing=${XDG_DATA_HOME:-$HOME/.local/share}/pymobiledevice3/remote_$udid.plist
+    [ -f "$pairing" ] || { echo "push_pairing: no pairing record at $pairing" >&2; exit 1; }
+fi
 
 # Stage it under the exact name the app reads, readable by this user only, removed afterwards.
 stage=$(mktemp -d)
@@ -65,13 +94,6 @@ with os.fdopen(fd, "wb") as target:
     plistlib.dump(out, target, fmt=plistlib.FMT_XML)
 print(f"push_pairing: {source}, host {identifier}, device alt IRK {'present' if 'alt_irk' in out else 'absent'}")
 PY
-
-if [ -z "${USBMUXD_SOCKET_ADDRESS:-}" ] && ss -ltn 2>/dev/null | grep -q '127\.0\.0\.1:27099 '; then
-    export USBMUXD_SOCKET_ADDRESS=127.0.0.1:27099
-fi
-timeout 30 pymobiledevice3 usbmux list 2>/dev/null | grep -q '"ProductType"' || {
-    echo "push_pairing: the phone is not reachable; wake and unlock it on the same Wi-Fi, then retry" >&2; exit 1
-}
 
 # The folder, so Library/StikJIT/ is created when missing (a lone file into it fails then).
 timeout 120 pymobiledevice3 apps push "$bundle" "$stage/StikJIT" "Library"

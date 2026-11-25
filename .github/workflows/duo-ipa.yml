@@ -1,10 +1,12 @@
-# Duo fork: build the unmodified External JIT .ipa (TolkaraDiagnostics) and keep it as a
-# workflow artifact for wolkaraforever/duo/fetch_ipa.sh on the Linux machine that signs it.
+# No-Mac fork: build the External JIT .ipa (TolkaraDiagnostics, with the Built-in JIT helper) and
+# publish it. Every green build of duo-baseline becomes a GitHub Release, so anyone can download
+# releases/latest/download/wolkaraforever-duo-unsigned.ipa and sign it on Linux with xtool
+# (docs/INSTALL-WITHOUT-A-MAC.md). The run's artifact stays for wolkaraforever/duo/fetch_ipa.sh.
 #
 # Differs from release.yml only where release.yml is known to fail:
 #   - v1.0.20 failed on macos-26's default Xcode (iOS 27 AVAudioSession API missing), so this
 #     job selects Xcode 27 exactly as validate.yml does, on the runner label validate.yml uses;
-#   - nothing is published as a release: the .ipa is an artifact of the run.
+#   - the release is unsigned and carries no game files; signing happens on the user's machine.
 # No Apple credential, certificate, profile or device record is used or needed here: the
 # package is unsigned (ad hoc), and signing happens on the user's own machine with xtool.
 
@@ -39,6 +41,8 @@ jobs:
     name: Unsigned External JIT .ipa
     runs-on: xcode-27
     timeout-minutes: 60
+    permissions:
+      contents: write   # the release step only
     steps:
       - uses: actions/checkout@v5
         with:
@@ -101,6 +105,28 @@ jobs:
             verify-report.txt
           if-no-files-found: error
           retention-days: 30
+
+      # A push to duo-baseline publishes; a manual run (which may build any ref) does not.
+      - name: Publish the release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          short=${GITHUB_SHA::7}
+          tag="duo-$(date -u +%Y%m%d)-$short"
+          cat > notes.md <<EOF
+          Unsigned WolkaraForever for iPhone and iPad (External JIT with Built-in JIT), built from
+          ${GITHUB_SHA}. Sign and install it from Linux with a free Apple ID: no Mac and no paid
+          developer account. Step-by-step guide:
+          ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/duo-baseline/docs/INSTALL-WITHOUT-A-MAC.md
+
+          Contains no game files. Embeds StikJIT 2.0.1 unmodified (MPL-2.0); its source is at
+          https://github.com/StikDebug/StikJIT/tree/2.0.1.
+
+          SHA-256: $(cut -d' ' -f1 "$IPA.sha256")
+          EOF
+          gh release create "$tag" "$IPA" "$IPA.sha256" verify-report.txt \
+            --target "$GITHUB_SHA" --title "WolkaraForever no-Mac build $short" --notes-file notes.md --latest
 
       - name: Keep the build log if it failed
         if: failure()

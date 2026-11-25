@@ -1,0 +1,93 @@
+# No-Mac fork: build xtool-duo, upstream xtool plus duo/xtool-increased-memory-limit.patch, as a
+# Linux AppImage, and publish it on the release tagged "xtool-duo". The patch makes a free Apple ID
+# ask Apple for the increased-memory-limit capability, which stock xtool drops; without it the game
+# gets about half the memory. Users download one file and need no Swift toolchain
+# (docs/INSTALL-WITHOUT-A-MAC.md).
+#
+# Built exactly as xtool builds its own release AppImages (xtool's .github/workflows/release.yml:
+# `docker compose run --build --rm xtool Linux/build.sh`), at the xtool commit duo/build_xtool.sh
+# pins. No Apple credential is used here.
+
+name: xtool-duo AppImage
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [duo-baseline]
+    paths:
+      - duo/xtool-increased-memory-limit.patch
+      - duo/build_xtool.sh
+      - .github/workflows/xtool-duo.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: xtool-duo
+  cancel-in-progress: true
+
+jobs:
+  appimage:
+    name: xtool-duo AppImage (x86_64)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: write   # the release step only
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check out xtool at the pinned commit and apply the patch
+        run: |
+          base=$(sed -n 's/^base=\([0-9a-f]\{40\}\).*/\1/p' duo/build_xtool.sh)
+          test -n "$base"
+          git init -q xtool && cd xtool
+          git remote add origin https://github.com/xtool-org/xtool
+          git fetch -q --depth 1 origin "$base"
+          git checkout -q FETCH_HEAD
+          git apply ../duo/xtool-increased-memory-limit.patch
+          echo "XTOOL_BASE=$base" >> "$GITHUB_ENV"
+
+      - name: Build the AppImage
+        working-directory: xtool
+        run: |
+          docker compose run --build -e XTOOL_VERSION="duo-${XTOOL_BASE::7}" -e XTL_CI=1 --rm xtool Linux/build.sh
+          cp Linux/packages/xtool-x86_64.AppImage ../xtool-duo-x86_64.AppImage
+
+      - name: Check it runs
+        run: |
+          chmod +x xtool-duo-x86_64.AppImage
+          APPIMAGE_EXTRACT_AND_RUN=1 ./xtool-duo-x86_64.AppImage --help | head -5
+          sha256sum xtool-duo-x86_64.AppImage | tee xtool-duo-x86_64.AppImage.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xtool-duo-appimage
+          path: |
+            xtool-duo-x86_64.AppImage
+            xtool-duo-x86_64.AppImage.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      # One fixed tag, so the download link never changes. Not marked latest: "latest" is the app.
+      - name: Publish on the xtool-duo release
+        if: github.ref == 'refs/heads/duo-baseline'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > notes.md <<EOF
+          xtool (https://github.com/xtool-org/xtool, MIT) at ${XTOOL_BASE}, plus
+          duo/xtool-increased-memory-limit.patch from this repository, built as xtool builds its own
+          AppImage. Use it in place of stock xtool to sign WolkaraForever with a free Apple ID while
+          keeping the increased memory limit. Guide:
+          ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/duo-baseline/docs/INSTALL-WITHOUT-A-MAC.md
+
+          SHA-256: $(cut -d' ' -f1 xtool-duo-x86_64.AppImage.sha256)
+          EOF
+          if gh release view xtool-duo >/dev/null 2>&1; then
+            gh release upload xtool-duo xtool-duo-x86_64.AppImage xtool-duo-x86_64.AppImage.sha256 --clobber
+            gh release edit xtool-duo --notes-file notes.md --latest=false
+          else
+            gh release create xtool-duo xtool-duo-x86_64.AppImage xtool-duo-x86_64.AppImage.sha256 \
+              --target "$GITHUB_SHA" --title "xtool-duo (patched xtool for free Apple IDs)" \
+              --notes-file notes.md --latest=false
+          fi

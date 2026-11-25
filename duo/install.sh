@@ -6,14 +6,14 @@
 # usage: duo/install.sh [path.ipa]       (default: ../builds/latest.ipa)
 #   DUO_UDID     the phone's UDID (default: let xtool pick the only device it finds)
 #   DUO_NETWORK  1 to install over Wi-Fi only (xtool --network), 0 for USB only (--usb)
-#   USBMUXD_SOCKET_ADDRESS  the muxer to reach the phone through. Default: the private Wi-Fi
-#                netmuxd on 127.0.0.1:27099 when one listens there (the world-editor setup,
-#                world-editor/docs/fedora.md), else the system usbmuxd.
+#   USBMUXD_SOCKET_ADDRESS  the muxer to reach the phone through. Default: a netmuxd (Wi-Fi) on
+#                127.0.0.1:27099 when one listens there, else the system usbmuxd (USB cable).
 #   DUO_INSTALL_TIMEOUT  seconds before giving up on xtool (default 600): if the phone drops
 #                out, xtool otherwise waits for ever.
-#   DUO_XTOOL    the xtool to sign with (default: ../tools/xtool-duo when present, else xtool).
-#                xtool-duo is upstream xtool plus the increased-memory-limit capability, which
-#                stock xtool drops on a free team. XTL_TRY_FREE_EVA=1 also asks Apple for
+#   DUO_XTOOL    the xtool to sign with. Default, the first that exists: ../tools/xtool-duo,
+#                ../tools/xtool-duo-x86_64.AppImage (the download from this repository's
+#                "xtool-duo" release), else `xtool` on PATH. xtool-duo is upstream xtool plus the
+#                increased-memory-limit capability, which stock xtool drops on a free team. XTL_TRY_FREE_EVA=1 also asks Apple for
 #                extended-virtual-addressing (paid-only per Apple; a refusal stops the install).
 #
 # Before running: close WolkaraForever on the phone (swipe it away). Replacing the app while
@@ -26,15 +26,21 @@ ipa=$(readlink -f "${1:-$builds/latest.ipa}")
 
 xtool_bin=${DUO_XTOOL:-}
 if [ -z "$xtool_bin" ]; then
-    xtool_bin=$(cd "$here/.." && pwd)/tools/xtool-duo
-    [ -x "$xtool_bin" ] || xtool_bin=xtool
+    xtool_bin=xtool
+    for candidate in "$(cd "$here/.." && pwd)/tools/xtool-duo" \
+                     "$(cd "$here/.." && pwd)/tools/xtool-duo-$(uname -m).AppImage"; do
+        [ -x "$candidate" ] && { xtool_bin=$candidate; break; }
+    done
 fi
+command -v "$xtool_bin" >/dev/null || {
+    echo "install: no xtool found; download xtool-duo (docs/INSTALL-WITHOUT-A-MAC.md, step 2)" >&2; exit 1
+}
 
 args=()
 [ -n "${DUO_UDID:-}" ] && args+=(--udid "$DUO_UDID")
 case "${DUO_NETWORK:-}" in 1) args+=(--network);; 0) args+=(--usb);; esac
 
-# Reach the phone the way world-editor does: over Wi-Fi through a private netmuxd when one runs.
+# Over Wi-Fi through a netmuxd when one runs on the usual port; otherwise USB through usbmuxd.
 if [ -z "${USBMUXD_SOCKET_ADDRESS:-}" ] && ss -ltn 2>/dev/null | grep -q '127\.0\.0\.1:27099 '; then
     export USBMUXD_SOCKET_ADDRESS=127.0.0.1:27099
 fi
@@ -47,9 +53,8 @@ except Exception: devices = []
 for d in devices: print(d.get("ProductType", "?"), d.get("ProductVersion", "?"), d.get("ConnectionType", "?"))' || true)
     if [ -z "$listed" ]; then
         echo "install: the phone is not reachable${USBMUXD_SOCKET_ADDRESS:+ through $USBMUXD_SOCKET_ADDRESS}." >&2
-        echo "install: wake and unlock it on the same Wi-Fi (and not charging from this PC), then retry." >&2
-        echo "install: if it still is not listed, the netmuxd serving it may have lost it; restart" >&2
-        echo "install: that one as world-editor/docs/fedora.md describes." >&2
+        echo "install: connect it with a USB cable (or, with netmuxd, the same Wi-Fi), unlock it," >&2
+        echo "install: tap Trust if it asks, then retry. Check with: pymobiledevice3 usbmux list" >&2
         exit 1
     fi
     echo "install: phone reachable: $(printf '%s' "$listed" | head -1)"

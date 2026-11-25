@@ -1,64 +1,53 @@
-# WolkaraForever on iPhone Duo with a free Apple ID
+# The no-Mac scripts (Linux, free Apple ID, Built-in JIT)
 
-This fork builds the External JIT app with **Built-in JIT**: the app enables JIT for itself
-when you press Play, through a bundled StikJIT helper extension. No JIT-enabler app is
-installed. The only other app on the phone is **LocalDevVPN** (App Store), which must be
-connected.
+To install, follow **[Install WolkaraForever without a Mac](../docs/INSTALL-WITHOUT-A-MAC.md)**.
+This page covers what each script does and how this fork differs from upstream.
 
-## One-time setup
+## How the fork differs from upstream
 
-1. **Build tools.** Run `duo/build_xtool.sh` to build `../tools/xtool-duo`. This is
-   xtool plus a patch that requests the increased memory limit on a free team.
-2. **App.** Run `duo/fetch_ipa.sh`, then `duo/install.sh`. This installs over Wi-Fi through
-   netmuxd and does not launch the app.
-3. **LocalDevVPN.** Install it from the App Store and connect it.
-4. **Pairing file.**
-   - On this computer, open idevice_pair (Linux AppImage).
-   - Pick the phone, choose **Remote pairing**, then **Create**. Keep the phone unlocked.
-   - Click **Save to file…**.
-   - Then run `duo/push_pairing.sh <file>`.
-   - The file goes into the app's private `Library/StikJIT/`, never into Documents and never
-     into git.
+- **Built-in JIT.** The External JIT app carries an app extension, `WolkaraJITHelper.appex`.
+  - It embeds [StikJIT](https://github.com/StikDebug/StikJIT) 2.0.1 (MPL-2.0, unmodified). CI
+    downloads it from its release and pins it by checksum in
+    [duo-ipa.yml](../.github/workflows/duo-ipa.yml).
+  - The app starts the extension and hands it a private XPC endpoint. The extension attaches
+    through LocalDevVPN (10.7.0.1), mounts the developer disk image (downloaded once, cached in
+    its own Library), and runs the universal protocol. The app then prepares its executable memory
+    and the debugger detaches before any game code runs.
+  - Sources: `wolkaraforever/JIT/`, `wolkaraforever/JITHelper/`, and patch 0091.
+- **When JIT is set up.** The app sets up JIT each time it comes to the foreground, if
+  LocalDevVPN is connected. That's what makes the mobile-data flow possible. If it couldn't, Play
+  runs the same steps itself and shows them.
+- **iOS on Duo touch.** Patch 0090 makes direct touch follow the interface mode, so it also works
+  with **iOS on Duo**.
+- **Render profile.** On the iPhone Duo, **Quality** renders at the screen's native scale, so the
+  game's interface is drawn pixel for pixel. Lower the game's own Render Scale to keep the 3D
+  light. Balanced (2x) stays the default.
+- **Memory.**
+  - xtool-duo makes Apple grant the increased memory limit on a free team.
+  - The app also declares iOS Game Mode. With Game Mode on, the limit is expected to rise from
+    about 6 GB to about 8 GB (measured by Playport on a 12 GB iPhone; **not yet confirmed on the
+    Duo**).
+  - To check, add `footprint` and `available` on a `memory checkpoint=` line in
+    `Documents/external-jit-diagnostics.log`.
 
-## Every week
+## Scripts
 
-Run `duo/install.sh` again before the 7-day free signature expires; it prints the date the
-signature ends. The app, the game and the pairing file stay.
+| Script | What it does |
+| --- | --- |
+| [install.sh](install.sh) | Signs the `.ipa` with xtool-duo for your free Apple ID and installs it (USB, or Wi-Fi through a netmuxd on `127.0.0.1:27099`). Running it again is the weekly renewal: the bundle ID stays `XTL-<team>.local.wolkaraforever.duo`, so the game and settings stay. It prints whether the increased memory limit was granted and when the signature ends. |
+| [push_pairing.sh](push_pairing.sh) | With no argument, runs `pymobiledevice3 lockdown remotepairing --pair` (promptless over the trusted USB connection) and copies the record, converted to StikJIT's format, into the app's private `Library/StikJIT/pairingFile.plist`. It can also copy in an existing Remote Pairing file. It refuses a lockdown record. |
+| [build_xtool.sh](build_xtool.sh) | Builds xtool-duo from source into `../tools/xtool-duo`. Most people download the AppImage instead. |
+| [xtool-increased-memory-limit.patch](xtool-increased-memory-limit.patch) | The xtool patch. It requests `INCREASED_MEMORY_LIMIT` for free teams. `XTL_TRY_FREE_EVA=1` also asks for extended virtual addressing (paid-only per Apple; a refusal stops the install). |
+| [fetch_ipa.sh](fetch_ipa.sh) | For maintainers: downloads a CI run's artifact with `gh` and checks its shape. Users download the release instead. |
 
-## Memory
+The scripts look for the signer in `../tools/` (next to the clone): `xtool-duo`, then
+`xtool-duo-x86_64.AppImage`, then `xtool` on PATH. `DUO_XTOOL` overrides that.
 
-The free team's profile grants the increased memory limit (`duo/install.sh` says so). The app
-also declares iOS Game Mode, which iOS turns on a few seconds after the app comes to the front.
-With it, the limit is expected to rise from about 6 GB to about 8 GB. Playport measured that on
-a 12 GB iPhone; it is not yet confirmed on the Duo. To check, compare `footprint` plus
-`available` on the `memory checkpoint=` lines in `Documents/external-jit-diagnostics.log`.
+## Builds
 
-## Every launch
-
-The app sets up JIT by itself whenever it comes to the foreground, while LocalDevVPN is
-connected. Steps:
-- reaching the device;
-- the developer disk image, downloaded once and mounted once per reboot;
-- preparing executable memory.
-
-JIT then lasts until the app closes, so **Play** starts the game straight away. If the app
-could not prepare JIT ahead of time, Play runs those steps itself and shows them.
-
-**On Wi-Fi:** keep LocalDevVPN connected, open the app, and press Play.
-
-**On cellular (5G).** LocalDevVPN cannot reach the device over cellular (an iOS restriction),
-and the launcher needs the network for its update check before it offers Play:
-1. Turn mobile data on, connect LocalDevVPN, then turn on **Airplane Mode**.
-2. Open the app. JIT is prepared within a few seconds. The update check fails for now; that is
-   expected.
-3. Turn **Airplane Mode** off. Tap **Retry**: the update check runs over cellular, and Play appears.
-4. Press **Play**.
-
-A failure says which step failed. The log is under Settings → Diagnostics and logs
-(`Documents/wolkaraforever.log`, lines tagged `[jit]`).
-
-## Third-party code
-
-The JIT helper embeds [StikJIT](https://github.com/StikDebug/StikJIT) 2.0.1, under the
-Mozilla Public License 2.0, unmodified. CI downloads it from its release and pins it by
-checksum (`.github/workflows/duo-ipa.yml`). Its source is at that repository.
+- [duo-ipa.yml](../.github/workflows/duo-ipa.yml) builds the unsigned `.ipa` on a macOS runner on
+  every push to `duo-baseline`. It verifies the package and publishes it as a release.
+- [xtool-duo.yml](../.github/workflows/xtool-duo.yml) builds the xtool-duo AppImage on Ubuntu, the
+  way xtool builds its own, and publishes it on the `xtool-duo` release.
+- No Apple credential, certificate, profile, pairing record or device identifier is used in CI or
+  committed. Signing happens only on your own computer.

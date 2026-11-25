@@ -2,6 +2,49 @@
 
 # WolkaraForever
 
+## Play WoW Forever on iPhone or iPad without a Mac (free Apple ID, no paid developer account)
+
+**This fork of [WolkaraForever](https://github.com/jklock/wolkaraforever)** lets you run World of
+Warcraft Forever locally on an **iPhone or iPad** with **no Mac**, **no Xcode**, **no paid Apple
+Developer account**, **no jailbreak** and **no streaming**. You sign and install it from a
+**Linux** PC with a **free Apple ID**, and the app turns on **JIT by itself** (built-in StikJIT, no
+StikDebug, SideStore or AltStore). The only extra app on the phone is LocalDevVPN.
+
+**→ Step-by-step guide: [Install WolkaraForever without a Mac](docs/INSTALL-WITHOUT-A-MAC.md)**
+
+| | |
+| --- | --- |
+| Download the app (unsigned `.ipa`) | [Latest release](https://github.com/TecN01R/wolkaraforever/releases/latest) |
+| Download the signer for free Apple IDs (`xtool-duo`, Linux AppImage) | [xtool-duo release](https://github.com/TecN01R/wolkaraforever/releases/tag/xtool-duo) |
+| Tested on | iPhone Duo, iOS 27.2.1, signed from Fedora Linux. Other devices and distributions are expected to work, but aren't tested yet |
+| Keeps | the increased memory limit, game downloads and updates, add-ons, touch controls, your data across the weekly re-signing |
+
+In short, on Linux (the [guide](docs/INSTALL-WITHOUT-A-MAC.md) explains every step):
+
+```sh
+mkdir -p ~/wolkara/tools && cd ~/wolkara
+git clone https://github.com/TecN01R/wolkaraforever.git
+curl -fL -o tools/xtool-duo-x86_64.AppImage https://github.com/TecN01R/wolkaraforever/releases/download/xtool-duo/xtool-duo-x86_64.AppImage
+chmod +x tools/xtool-duo-x86_64.AppImage
+curl -fLO https://github.com/TecN01R/wolkaraforever/releases/latest/download/wolkaraforever-duo-unsigned.ipa
+tools/xtool-duo-x86_64.AppImage auth login          # your free Apple ID ("Password")
+cd wolkaraforever
+duo/install.sh ~/wolkara/wolkaraforever-duo-unsigned.ipa   # phone on USB, unlocked
+# on the phone: Developer Mode on, and trust your Apple ID (Settings > General > VPN & Device Management)
+duo/push_pairing.sh                                 # once: lets the app turn on JIT by itself
+# on the phone: install LocalDevVPN from the App Store, connect it, open "Tolkara", tap Play
+```
+
+Not affiliated with Blizzard or Apple. This project contains no game files; you need your own game
+account.
+
+---
+
+## Upstream WolkaraForever (the Mac route)
+
+The rest of this page is upstream's README. It describes the original route, which uses a Mac and a
+paid developer membership.
+
 > Verified: 2026-11-21 · Source: `8375cbb`
 
 Run World of Warcraft Forever locally on an iPad or iPhone with a source-built WolkaraForever installation. The app downloads and maintains your game data, then starts the unchanged client through Tolkara. It is not a streaming service and does not include game files.
