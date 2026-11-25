@@ -37,11 +37,15 @@ fi
 # The checksum the runner wrote, against the file we hold.
 ( cd "$dest" && sha256sum -c "$ipa_name.sha256" )
 
-# Shape checks that need no macOS tools: one app under Payload/, no app extension, no profile.
+# Shape checks that need no macOS tools: one app under Payload/, the JIT helper as its only
+# extension, no profile.
 listing=$(unzip -Z1 "$dest/$ipa_name")
 apps=$(printf '%s\n' "$listing" | grep -E '^Payload/[^/]+\.app/$' | wc -l)
 [ "$apps" -eq 1 ] || { echo "fetch_ipa: expected one app in Payload/, found $apps" >&2; exit 1; }
-! printf '%s\n' "$listing" | grep -q '\.appex/' || { echo "fetch_ipa: unexpected app extension" >&2; exit 1; }
+extensions=$(printf '%s\n' "$listing" | grep -oE '^Payload/[^/]+\.app/PlugIns/[^/]+\.appex/' | sort -u || true)
+[ "$extensions" = "$(printf '%s\n' "$listing" | grep -oE '^Payload/[^/]+\.app/' | head -1)PlugIns/WolkaraJITHelper.appex/" ] || {
+    echo "fetch_ipa: expected exactly one app extension, the Built-in JIT helper; found: ${extensions:-none}" >&2; exit 1
+}
 ! printf '%s\n' "$listing" | grep -q 'embedded\.mobileprovision$' || { echo "fetch_ipa: unexpected provisioning profile" >&2; exit 1; }
 printf '%s\n' "$listing" | grep -q 'CompatibilityRootCertificates\.plist$' ||
     { echo "fetch_ipa: no root certificates; Battle.net login would fail (BLZ51900003)" >&2; exit 1; }

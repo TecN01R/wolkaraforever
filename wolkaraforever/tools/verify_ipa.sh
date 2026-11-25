@@ -30,7 +30,22 @@ app="$tmp/Payload/TolkaraDiagnostics.app"
     echo "verify_ipa: expected exactly one app under Payload" >&2; exit 1
 }
 [ ! -e "$app/embedded.mobileprovision" ] || { echo "verify_ipa: provisioning profile present" >&2; exit 1; }
-[ ! -d "$app/PlugIns" ] || { echo "verify_ipa: External-JIT IPA must not carry an app extension" >&2; exit 1; }
+# One extension, and only this one: the Built-in JIT helper (StikJIT), on the extension point it
+# uses as a vehicle, with StikJIT's framework and universal script inside it.
+helper="$app/PlugIns/WolkaraJITHelper.appex"
+[ -d "$helper" ] || { echo "verify_ipa: the Built-in JIT helper (PlugIns/WolkaraJITHelper.appex) is missing" >&2; exit 1; }
+[ "$(find "$app/PlugIns" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')" = 1 ] || {
+    echo "verify_ipa: the only app extension allowed is the Built-in JIT helper" >&2; exit 1
+}
+[ ! -e "$helper/embedded.mobileprovision" ] || { echo "verify_ipa: the JIT helper carries a provisioning profile" >&2; exit 1; }
+[ "$(plutil -extract NSExtension.NSExtensionPointIdentifier raw "$helper/Info.plist")" = com.apple.ar.viewer ] || {
+    echo "verify_ipa: the JIT helper is not on its com.apple.ar.viewer vehicle extension point" >&2; exit 1
+}
+stikjit="$helper/Frameworks/StikJIT.framework"
+[ -f "$stikjit/StikJIT" ] && [ -f "$stikjit/universal.js" ] || {
+    echo "verify_ipa: the JIT helper does not carry StikJIT.framework with universal.js" >&2; exit 1
+}
+stikjit_version=$(plutil -extract CFBundleShortVersionString raw "$stikjit/Info.plist")
 
 # The one build input a reduced package is most likely to be missing, and the one that decides
 # whether any login can work: the public root certificates a source build exports from the
@@ -89,5 +104,6 @@ mkdir -p "$(dirname "$report")"
     echo "Signing team: absent"
     echo "System root certificates: present ($roots_count)"
     echo "Entitlements: increased-memory-limit, extended-virtual-addressing"
+    echo "Built-in JIT helper: WolkaraJITHelper.appex, StikJIT $stikjit_version"
 } > "$report"
 echo "verify_ipa: PASS ($report)"

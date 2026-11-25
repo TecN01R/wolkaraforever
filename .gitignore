@@ -21,3 +21,6 @@ local.env
 local.test.env
 __pycache__/
 Tolkara.xcodeproj/
+
+# Duo fork: third-party build inputs fetched by .github/workflows/duo-ipa.yml
+vendor/

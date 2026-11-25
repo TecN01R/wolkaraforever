@@ -58,6 +58,17 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      # Built-in JIT's helper embeds StikJIT (MPL-2.0) from its release, pinned by checksum.
+      # Source: https://github.com/StikDebug/StikJIT (tag 2.0.1). project.yml reads vendor/.
+      - name: Fetch StikJIT 2.0.1
+        run: |
+          mkdir -p vendor
+          curl -fsSL -o vendor/StikJIT.xcframework.zip \
+            https://github.com/StikDebug/StikJIT/releases/download/2.0.1/StikJIT.xcframework.zip
+          echo "c376687326a785f5ed1da8caca08adc709b56919019dd751bca059b92b175d95  vendor/StikJIT.xcframework.zip" | shasum -a 256 -c
+          unzip -q vendor/StikJIT.xcframework.zip -d vendor
+          test -f vendor/StikJIT.xcframework/ios-arm64/StikJIT.framework/universal.js
+
       # Same commands as release.yml: the platform packager, then the repository's verifier
       # (one app, no extension, no profile, no team, memory entitlements declared, root
       # certificates present - without them every Battle.net login fails with BLZ51900003).

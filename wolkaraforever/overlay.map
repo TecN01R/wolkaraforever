@@ -285,3 +285,13 @@ wolkaraforever/Addons/WolkaraRoue-1.0.4.zip launcher/Addons/WolkaraRoue-1.0.4.zi
 # page names all four, which is the only way a reader can tell whose is whose.
 LICENSE WolkaraForever-LICENSE add
 NOTICE.md WolkaraForever-NOTICE.md add
+#
+# JIT: Built-in JIT - the app's coordinator, and the StikJIT helper extension (Duo fork)
+wolkaraforever/JIT/WKBuiltInJIT.h launcher/App/WKBuiltInJIT.h add
+wolkaraforever/JIT/WKBuiltInJIT.m launcher/App/WKBuiltInJIT.m add
+wolkaraforever/JIT/WKJITProtocol.h launcher/App/WKJITProtocol.h add
+wolkaraforever/JIT/WKJITProtocol.h jithelper/WKJITProtocol.h add
+wolkaraforever/JITHelper/Info.plist jithelper/Info.plist add
+wolkaraforever/JITHelper/main.m jithelper/main.m add
+wolkaraforever/JITHelper/WKJITHelper-Bridging.h jithelper/WKJITHelper-Bridging.h add
+wolkaraforever/JITHelper/WKJITWorker.swift jithelper/WKJITWorker.swift add

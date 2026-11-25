@@ -36,6 +36,7 @@
 #import "WolkaraForeverLog.h"
 #import "WolkaraForeverTheme.h"
 #import "WKLocalization.h"
+#import "WKBuiltInJIT.h"
 // Why the developer service refused, in the layer's own vocabulary. The sentence
 // is localized below; the layer's English text is only the fallback for a key the
 // tables do not carry yet.
@@ -108,6 +109,9 @@ static NSString *const AKChatComposerEnabledDefaultsKey = @"AKChatComposerEnable
 @property(nonatomic) NSUInteger chatComposerGeneration;
 // iPadOS allows one guest startup per process; some checks also end it.
 @property(nonatomic) BOOL sessionUsed;
+// Built-in JIT: the acquisition in progress, and its status alert.
+@property(nonatomic,strong,nullable) WKBuiltInJIT *builtInJIT;
+@property(nonatomic,strong,nullable) UIAlertController *builtInJITStatus;
 // A plain launch (library shown, no development arguments): a game that
 // closes cleanly ends the process so the next tap starts another app.
 @property(nonatomic) BOOL uiSession;
@@ -159,6 +163,19 @@ static void PrepareLocalSigningFolder(void) {
 }
 // JIT enabled from outside, or an arena its enabler left.
 static BOOL PreparedFromOutside(void) { return hd_may_run_unsigned_code() || ng_arena_reserved(); }
+// Ask the attached enabler for the arena, keeping the exchange: the guest's log does not exist
+// yet, so nothing else records what was asked for and what came back. Any thread.
+static bool ReserveArenaLogged(void) {
+    char *said=NULL; size_t length=0;
+    FILE *exchange=open_memstream(&said,&length);
+    bool reserved=ng_reserve_arena(exchange);
+    if(exchange) {
+        fclose(exchange);
+        for(NSString *line in [@(said?:"") componentsSeparatedByString:@"\n"]) if(line.length) WKLog("jit",@"%@",line);
+        free(said);
+    }
+    return reserved;
+}
 
 // The execution modes as the chooser shows them. The identifiers, the saved setting and
 // every log line keep the platform's own English names (TKExecutionModeName), because they
@@ -280,19 +297,11 @@ static NSString *TKModeUnavailableText(TKExecutionMode mode) {
 }
 // An enabler attaches only briefly: take its arena now.
 - (void)reserveExecutableMemory {
-    // External JIT only: any other debugger stops at the request.
+    // External JIT only: any other debugger stops at the request. Built-in JIT reserves
+    // from its own thread while its helper is attached; this path stays out of its way.
     if(self.executionMode!=TKExecutionModeExternalJIT || !TKExecutionModeAvailable(self.executionMode,NULL) ||
-       ng_arena_reserved() || !hd_debugger_attached() || !CanStartApps()) return;
-    // Keep the exchange with the enabler: the guest's log does not exist yet, so
-    // nothing else records what was asked for and what came back.
-    char *said=NULL; size_t length=0;
-    FILE *exchange=open_memstream(&said,&length);
-    bool reserved=ng_reserve_arena(exchange);
-    if(exchange) {
-        fclose(exchange);
-        for(NSString *line in [@(said?:"") componentsSeparatedByString:@"\n"]) if(line.length) WKLog("jit",@"%@",line);
-        free(said);
-    }
+       ng_arena_reserved() || !hd_debugger_attached() || !CanStartApps() || WKBuiltInJITInProgress()) return;
+    bool reserved=ReserveArenaLogged();
     WKLog("jit",@"an arena was %s at launch",reserved?"reserved":"not reserved");
 }
 // The touch adapter posts this when it has created the game's own text view. That view
@@ -1168,6 +1177,46 @@ static NSString *AKAudioStateDescription(void) {
     });
 }
 - (void)startSignedGame:(NSString *)container { [self runNativeGame:YES app:self.launchingApp container:container]; }
+// Built-in JIT: the bundled StikJIT helper attaches, this process reserves its arena through
+// the same JIT26 breakpoints an outside enabler services, the helper detaches, and the launch
+// continues through launchExternalJITApp's own checks. A failure leaves the session usable.
+- (void)acquireBuiltInJITThenLaunch:(TKApp *)app {
+    if(self.builtInJIT) return;
+    NSString *unavailable=WKBuiltInJITUnavailableReason();
+    if(unavailable) {
+        [self alert:WKLocalized(@"shell.jit.title") message:[NSString stringWithFormat:@"%@\n\n%@",unavailable,WKLocalized(@"shell.jit.message")]];
+        return;
+    }
+    UIAlertController *status=[UIAlertController alertControllerWithTitle:@"Enabling JIT" message:@"Starting the JIT helper"
+                                                          preferredStyle:UIAlertControllerStyleAlert];
+    self.builtInJITStatus=status;
+    UIViewController *presenter=self.window.rootViewController;
+    while(presenter.presentedViewController) presenter=presenter.presentedViewController;
+    [presenter presentViewController:status animated:YES completion:nil];
+    self.builtInJIT=[WKBuiltInJIT new];
+    __weak AKHostSceneDelegate *weakSelf=self;
+    [self.builtInJIT acquireWithReserve:^BOOL{
+        return ReserveArenaLogged();
+    } progress:^(NSString *stage) {
+        weakSelf.builtInJITStatus.message=stage;
+    } completion:^(NSString *failure) {
+        AKHostSceneDelegate *strongSelf=weakSelf;
+        if(!strongSelf) return;
+        strongSelf.builtInJIT=nil;
+        UIAlertController *shown=strongSelf.builtInJITStatus;
+        strongSelf.builtInJITStatus=nil;
+        void (^next)(void)=^{
+            if(failure || !PreparedFromOutside()) {
+                [strongSelf alert:@"JIT Not Enabled" message:failure ?: @"No executable memory was prepared."];
+                return;
+            }
+            WKLog("jit",@"built-in JIT ready; starting %@",app.name);
+            [strongSelf launchExternalJITApp:app];
+        };
+        if(shown.presentingViewController) [shown dismissViewControllerAnimated:YES completion:next];
+        else next();
+    }];
+}
 // External JIT: a tool outside the app prepares memory.
 - (void)launchExternalJITApp:(TKApp *)app {
     if(self.sessionUsed) {
@@ -1179,9 +1228,9 @@ static NSString *AKAudioStateDescription(void) {
         [self alert:WKLocalized(@"shell.cannotStart.title") message:error.localizedDescription];
         return;
     }
-    // Opened without JIT: say so; the session stays usable.
+    // Opened without JIT: enable it with the bundled helper, then start this app again.
     if(!PreparedFromOutside()) {
-        [self alert:WKLocalized(@"shell.jit.title") message:WKLocalized(@"shell.jit.message")];
+        [self acquireBuiltInJITThenLaunch:app];
         return;
     }
     [self endSession:[NSString stringWithFormat:WKLocalized(@"shell.session.used"),app.name]];

@@ -1,0 +1,82 @@
+# WolkaraForever layer patch 0091 - Built-in JIT: the StikJIT helper extension in the .ipa
+#
+# Why: External JIT needs a debugger outside the app at every launch, so far a separate
+# enabler app. Built-in JIT moves that enabler into the app as a helper extension: a process
+# can never attach a debugger to itself, an extension is a second process the app can start on
+# demand, and StikJIT (MPL-2.0, fetched as its 2.0.1 release XCFramework and checksum-checked)
+# runs its universal script there against the app. The memory protocol is unchanged.
+#
+# - project.yml: the WolkaraJITHelper app-extension target (sources overlaid at jithelper/),
+#   embedded in TolkaraDiagnostics only, with StikJIT.xcframework embedded in the helper.
+# - tools/package_ipa.sh: ad hoc signing from the inside out (framework, helper, app), since
+#   codesign refuses a bundle with unsigned nested code. The sideloader re-signs all of it.
+#
+# Applies after: 0066-ipa-carries-the-system-roots.patch, 0090-duo-direct-touch-follows-interface-mode.patch
+# Applies to: project.yml, tools/package_ipa.sh
+# Upstream: no (fork-specific route).
+#
+diff --git a/project.yml b/project.yml
+--- a/project.yml
++++ b/project.yml
+@@ -90,6 +90,32 @@ targetTemplates:
+ targets:
+   TolkaraDiagnostics:
+     templates: [AppBase]
++    # Built-in JIT (WolkaraForever Duo fork): the StikJIT helper extension the app starts
++    # when Play needs JIT. Only this build carries it; Tolkara uses the Developer service.
++    dependencies:
++      - target: WolkaraJITHelper
++        embed: true
++  WolkaraJITHelper:
++    type: app-extension
++    platform: iOS
++    deploymentTarget: "17.4"
++    sources:
++      - path: jithelper
++        excludes: [Info.plist]
++    dependencies:
++      # Fetched and checksum-checked into the repository's ignored vendor/ before a build
++      # (.github/workflows/duo-ipa.yml); the project sits two levels below it in build/platform.
++      - framework: ../../vendor/StikJIT.xcframework
++        embed: true
++    settings:
++      base:
++        PRODUCT_BUNDLE_IDENTIFIER: $(TOLKARA_BUNDLE_ID).jithelper
++        INFOPLIST_FILE: jithelper/Info.plist
++        GENERATE_INFOPLIST_FILE: NO
++        SWIFT_VERSION: "5.0"
++        SWIFT_OBJC_BRIDGING_HEADER: "$(SRCROOT)/jithelper/WKJITHelper-Bridging.h"
++        SKIP_INSTALL: YES
++        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
+   Tolkara:
+     templates: [AppBase]
+     sources: [authorization/App, authorization/Diagnostics, authorization/Control, authorization/Storage, authorization/Pairing/PairingWire.swift, authorization/Pairing/PairingIdentity.swift]
+diff --git a/tools/package_ipa.sh b/tools/package_ipa.sh
+--- a/tools/package_ipa.sh
++++ b/tools/package_ipa.sh
+@@ -17,7 +17,7 @@ export DEVELOPER_DIR=${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer
+ mkdir -p logs build
+ LOG=logs/ipa-$(date +%Y%m%d-%H%M%S).log
+ tools/generate.sh
+-# No extension: a free Apple ID cannot sign one.
++# One extension only: the Built-in JIT helper (no capabilities, so a free Apple ID signs it).
+ # GENERIC: one adapter per framework, no executable.
+ # Its one way to run code, chosen already.
+ # By target: schemes need a destination the SDK alone lacks.
+@@ -51,6 +51,16 @@ for library in "$APP"/Frameworks/*.dylib; do
+     [ -f "$library" ] || continue
+     codesign -f -s - "$library" >> "$LOG" 2>&1
+ done
++# Nested code before the bundle that holds it (codesign refuses an unsigned subcomponent):
++# the Built-in JIT helper's framework, then the helper, then the app.
++for framework in "$APP"/PlugIns/*.appex/Frameworks/*.framework; do
++    [ -d "$framework" ] || continue
++    codesign -f -s - "$framework" >> "$LOG" 2>&1
++done
++for extension in "$APP"/PlugIns/*.appex; do
++    [ -d "$extension" ] || continue
++    codesign -f -s - "$extension" >> "$LOG" 2>&1
++done
+ codesign -f -s - --entitlements launcher/App.entitlements "$APP" >> "$LOG" 2>&1
+ for capability in increased-memory-limit extended-virtual-addressing; do
+     codesign -d --entitlements - --xml "$APP" 2>/dev/null | grep -q "com.apple.developer.kernel.$capability" ||
