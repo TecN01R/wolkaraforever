@@ -459,6 +459,8 @@
 "touch.autorun" = "Auto-run";
 "touch.gamepad.doneEditing" = "Done editing";
 "touch.gamepad.dragHint" = "Drag controls to move them";
+"touch.gamepad.resetPositions" = "Reset Positions";
+"touch.gamepad.resetPositions.confirm" = "Put every control back where it started";
 "touch.settings" = "Touch control settings";
 "touch.settings.title" = "Touch controls";
 "touch.settings.transparency" = "Transparency";

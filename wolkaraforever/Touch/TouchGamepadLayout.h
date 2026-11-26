@@ -99,6 +99,9 @@ typedef NS_ENUM(NSInteger, AKGamepadLayoutMode) {
 - (BOOL)deleteProfileNamed:(NSString *)name;
 - (CGRect)frameForItem:(NSString *)item defaultFrame:(CGRect)frame inBounds:(CGRect)bounds;
 - (void)moveItem:(NSString *)item toFrame:(CGRect)frame inBounds:(CGRect)bounds;
+// Every control of the arrangement in use (Full or Simple) back to its default place, and saved.
+// Sizes, switches, ability zones and the other arrangement's places are not touched.
+- (void)resetPositions;
 - (void)save;
 - (void)reset;
 @end

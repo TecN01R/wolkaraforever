@@ -457,6 +457,8 @@
 "touch.autorun" = "Automatisch laufen";
 "touch.gamepad.doneEditing" = "Bearbeiten beenden";
 "touch.gamepad.dragHint" = "Elemente zum Verschieben ziehen";
+"touch.gamepad.resetPositions" = "Positionen zurücksetzen";
+"touch.gamepad.resetPositions.confirm" = "Alle Elemente an ihren Ausgangsplatz zurücksetzen";
 "touch.settings" = "Einstellungen der Bedienelemente";
 "touch.settings.title" = "Bedienelemente";
 "touch.settings.transparency" = "Transparenz";

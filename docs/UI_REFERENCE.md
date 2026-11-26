@@ -338,7 +338,7 @@ each one is.
 | **Triggers on the outside** | Which side the shoulder buttons sit on. Greyed in the simple layout. |
 | **Haptic feedback** | Controller vibration. |
 | **Performance overlay (FPS & Thermals)** | Draws the frame rate, GPU, thermal state, memory, battery and power state over the game. Tap it to collapse, drag it to move. |
-| **Edit layout** | Enters the drag editor, where each control can be moved and each ability zone can pick its button. |
+| **Edit layout** | Enters the drag editor, where each control can be moved and each ability zone can pick its button. **Reset Positions** (this fork), beside **Done editing**, puts every control of the arrangement you are editing back where it started, after a one-item confirmation menu; sizes, switches and ability zones stay. |
 | **Simple layout**, **Stick buttons** | The same two choices as in the launcher's Controller Layout, in-game. |
 | **Ability zones** (**Add**, **Clear**) | Adds or removes on-screen ability buttons while you play. |
 | **Reset to defaults** | Puts every control back where it started. |

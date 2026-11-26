@@ -290,7 +290,7 @@ static const CGFloat AKFloatRightMinX = 0.64, AKFloatRightMinY = 0.25, AKFloatRi
     AKGamepadButton *_jumpButton;
     NSMutableDictionary<NSString *,NSValue *> *_dragOrigins;
     UIView *_settings;
-    UIButton *_editDone;
+    UIButton *_editDone, *_editReset;
     UILabel *_hint;
     UISwitch *_editSwitch, *_hapticsSwitch, *_overlaySwitch, *_swapShouldersSwitch, *_sticksOnlySwitch, *_jumpOnlySwitch;
     UIView *_jumpOnlyRow;
@@ -375,6 +375,20 @@ static const CGFloat AKFloatRightMinX = 0.64, AKFloatRightMinY = 0.25, AKFloatRi
         _editDone.accessibilityIdentifier = @"wolkaraforever.layout.done";
         [_editDone addTarget:self action:@selector(finishConfiguration) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:_editDone];
+        // Beside Done: every control of this arrangement back to where it started. A menu with one
+        // action is the confirmation, so a stray tap while dragging cannot undo a layout.
+        _editReset = [UIButton buttonWithType:UIButtonTypeSystem];
+        [_editReset setTitle:AKHostLocalized(@"touch.gamepad.resetPositions") forState:UIControlStateNormal];
+        _editReset.backgroundColor = _editDone.backgroundColor;
+        _editReset.tintColor = UIColor.whiteColor; _editReset.layer.cornerRadius = 14;
+        _editReset.accessibilityIdentifier = @"wolkaraforever.layout.resetPositions";
+        __weak AKGamepadOverlay *weakEditor = self;
+        UIAction *resetAction = [UIAction actionWithTitle:AKHostLocalized(@"touch.gamepad.resetPositions.confirm")
+            image:nil identifier:nil handler:^(__kindof UIAction *action) { (void)action; [weakEditor resetPositions]; }];
+        resetAction.attributes = UIMenuElementAttributesDestructive;
+        _editReset.menu = [UIMenu menuWithTitle:@"" children:@[resetAction]];
+        _editReset.showsMenuAsPrimaryAction = YES;
+        [self addSubview:_editReset];
         _hint = [UILabel new]; _hint.text = AKHostLocalized(@"touch.gamepad.dragHint");
         _hint.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
         _hint.textColor = UIColor.whiteColor; _hint.textAlignment = NSTextAlignmentCenter;
@@ -698,7 +712,7 @@ static const CGFloat AKFloatRightMinX = 0.64, AKFloatRightMinY = 0.25, AKFloatRi
     BOOL jumpOnly = [self jumpReplacesCameraStick];
     if (jumpOnly && _rightStick.held) [_rightStick cancelTrackingWithEvent:nil];
     _rightStick.hidden = jumpOnly;
-    _editDone.hidden = _hint.hidden = !_editing;
+    _editDone.hidden = _editReset.hidden = _hint.hidden = !_editing;
     _editGrid.hidden = _editAxes.hidden = !_editing;
     BOOL floating = [self floatingActive];
     // Leaving the floating arrangement - the switch, the settings, a mode change - lets go of
@@ -927,7 +941,8 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
             ? CGRectMake(CGRectGetMidX(self.bounds)-22,CGRectGetMaxY(safe)-8-44-8-44,44,44)
             : CGRectMake(CGRectGetMidX(self.bounds)-22,bottom-side+190*side/216-22,44,44))
         baseSize:CGSizeMake(44,44) safe:safe];
-    _editDone.frame = CGRectMake(CGRectGetMidX(safe)-70,CGRectGetMinY(safe)+60,140,40);
+    _editReset.frame = CGRectMake(CGRectGetMidX(safe)-146,CGRectGetMinY(safe)+60,140,40);
+    _editDone.frame = CGRectMake(CGRectGetMidX(safe)+6,CGRectGetMinY(safe)+60,140,40);
     _hint.frame = CGRectMake(CGRectGetMidX(safe)-150,CGRectGetMinY(safe)+103,300,22);
     if (_settings) {
         // Mobile: the fixed toolbar sits at the bottom, so the sheet hangs from the top.
@@ -943,6 +958,12 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
             ? CGRectMake(CGRectGetMidX(safe)-width/2,CGRectGetMinY(safe)+8,width,height)
             : CGRectMake(CGRectGetMidX(safe)-width/2,CGRectGetMaxY(safe)-height-8,width,height);
     }
+}
+- (void)resetPositions {
+    [_dragOrigins removeAllObjects];
+    [_preferences resetPositions];
+    AKGamepadLog(@"touch gamepad: layout editor reset the %@ arrangement's positions", [_preferences modeName]);
+    [self setNeedsLayout];
 }
 - (void)layoutEditGridInBounds:(CGRect)safe {
     // Symmetric spacing about the safe-area center. Layers are visual guides

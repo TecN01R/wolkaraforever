@@ -490,6 +490,14 @@ static void TestLayoutSchema(void) {
                              CGRectMake(300,40,56,44)));
     NSDictionary *rollback = [defaults dictionaryForKey:key];
     assert(rollback[@"simplePositions"] && [rollback[@"simplePositions"][@"LB"] isKindOfClass:NSArray.class]);
+    // 5b. The editor's Reset Positions clears the arrangement in use and nothing else: Full's
+    //     places go, Simple's LB stays, and the switches are untouched.
+    [full moveItem:@"menu" toFrame:CGRectMake(10,20,44,44) inBounds:bounds];
+    [full resetPositions];
+    AKGamepadLayout *afterReset = [[AKGamepadLayout alloc] initWithDefaults:defaults];
+    assert(CGRectEqualToRect([afterReset frameForItem:@"menu" defaultFrame:CGRectMake(300,40,44,44) inBounds:bounds],
+                             CGRectMake(300,40,44,44)));
+    assert([[defaults dictionaryForKey:key][@"simplePositions"][@"LB"] isKindOfClass:NSArray.class]);
     // 6. The stick buttons are off unless asked for, and the answer survives a relaunch.
     assert(!full.stickButtonsEnabled);
     full.stickButtonsEnabled = YES; [full save];

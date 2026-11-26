@@ -23,6 +23,9 @@ correctness.
   jump only**, shown only while that is on. With it on, the camera stick is not drawn, a round
   Jump button the size of the stick itself sits where it was, and the camera turns by dragging
   on the game. Off by default. *Installed on the Duo; not yet confirmed in play.*
+- **Reset Positions in the layout editor.** Beside **Done editing**: every control of the
+  arrangement being edited (Full or Simple) goes back to its default place, after a one-item
+  confirmation menu. Sizes, switches and ability zones stay. *Not yet tested on a device.*
 - The fork's build also runs the `Config.wtf` rules tests.
 
 ### Fixed

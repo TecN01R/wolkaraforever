@@ -176,6 +176,7 @@ NSString *AKGamepadStickButtonElement(NSString *element) {
     CGFloat y = dy > 0 ? (frame.origin.y-bounds.origin.y)/dy : 0;
     [self positions][item] = @[@(Clamp(x,0,1,0)),@(Clamp(y,0,1,0))];
 }
+- (void)resetPositions { [[self positions] removeAllObjects]; [self save]; }
 - (void)save {
     // A newer build's dictionary is left exactly as it is: this build cannot describe it, and
     // overwriting it would be the update that loses a layout.
