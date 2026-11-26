@@ -13,10 +13,6 @@ correctness.
 ## 2026-11-26
 
 ### Added
-- **Render-target sizes in the Metal trace** (patch 0904, diagnostics only, off by default). A
-  file named `trace-metal` in the app's Documents folder turns on the Metal trace, which now
-  logs the width and height of every render target the game creates, with the time. That is
-  the direct measure of the resolution the 3D world is drawn at for a given Render Scale.
 
 - **Reset All WoW Settings.** A UI Manager button beside the graphics reset. It empties the
   game's `Config.wtf` except region, language, account name, the Battle.net agent's id, Gamepad
@@ -90,5 +86,5 @@ correctness.
 
 ### Changed
 
-- The fork's own patches are numbered `09xx` (0901, 0902, and 0903-0904 from 2026-11-26), apart from
+- The fork's own patches are numbered `09xx` (0901, 0902, and 0903 from 2026-11-26), apart from
   upstream's sequence.
