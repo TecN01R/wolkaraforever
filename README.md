@@ -16,6 +16,12 @@ Developer account**, **no jailbreak** and **no streaming**. You sign and install
 StikDebug, SideStore or AltStore). The only extra app on the phone is
 [LocalDevVPN](https://apps.apple.com/app/id6755608044), and it's **required**.
 
+It is also where **fixes for the iPhone Duo** go: the game measures the screen it actually starts
+on, taps work with the **iOS on Duo** interface, pages centre on the wide unfolded screen, the game
+stays in landscape when unfolded, and a **Quality** render profile draws the interface at the inner
+screen's own resolution. What each does, and what is confirmed on the device, is in the
+[fork's README](duo/README.md).
+
 > [!WARNING]
 > **Only tested on one iPhone Duo (iOS 27.2.1), signed from Fedora Linux.** It's shared as is, with no claims about its effectiveness or correctness, and no support. Use it at your own risk.
 
