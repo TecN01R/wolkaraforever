@@ -1,0 +1,149 @@
+# WolkaraForever layer patch 0903 - before its first window, the guest is told about the app's own screen
+#
+# Why: until the guest orders its first window front, nothing has published the guest display
+# geometry (patches 0045/0046), and CGDisplayBounds, CGDisplayCopyDisplayMode and NSScreen fell
+# back to UIScreen.mainScreen. That is the device's one screen on every iPhone and iPad, but on
+# the iPhone Duo it is the cover screen: 466 x 678 points, even while the app runs unfolded on
+# the 951 x 669 point inner screen. World of Warcraft measures its monitor while it starts,
+# before it opens a window, so its log read "Monitor 0 ... Size(678x466)" and its hardware
+# detection used that size ("Detected Graphics Defaults ... WindowSize: 678x466"); the window
+# itself was sized correctly a moment later ("window content size -> 951x669").
+#
+# Now the fallback is the first window scene's coordinate space and screen - the scene
+# -ak_orderFront seeds the geometry from, so the answer does not change when the window
+# appears - read on the main thread, where the guest's startup runs. Off the main thread, and
+# before there is a window scene, the answer is UIScreen.mainScreen's, exactly as before. The
+# first time the two screens disagree, each adapter logs which one the guest was given.
+# NSScreen's maximum frame rate follows the same screen (both Duo screens report 120 Hz).
+# Single-screen devices get the same answers as before.
+#
+# Applies after: 0023-appkit-backing-scale.patch, 0029-report-selected-guest-mode.patch,
+#                0031-cache-guest-display-mode.patch, 0045-iphone-guest-display.patch
+# Applies to: translation/CoreGraphics/Displays.m, translation/AppKit/Screens.m,
+#             translation/AKSupport/AKGuestDisplayFallback.h (new)
+# Upstream: candidate.
+#
+diff --git a/translation/AKSupport/AKGuestDisplayFallback.h b/translation/AKSupport/AKGuestDisplayFallback.h
+new file mode 100644
+index 0000000..f24c3a8
+--- /dev/null
++++ b/translation/AKSupport/AKGuestDisplayFallback.h
+@@ -0,0 +1,49 @@
++// What the guest is told about its display before a window has published one.
++//
++// Included by the adapters that answer display questions (CoreGraphics' CGDisplay*, AppKit's
++// NSScreen); both link UIKit, which libAKSupport itself does not, so this is a header and not
++// a function of that library.
++#pragma once
++#import <UIKit/UIKit.h>
++#import "AKSupport.h"
++
++// Until the guest's first window is ordered front, nothing has published the real geometry
++// (AKSetGuestDisplayGeometry), and a guest may already ask: World of Warcraft measures its
++// monitor while it starts, before it opens a window. The answer used to be UIScreen.mainScreen,
++// which is the device's one screen on every iPhone and iPad - but on the iPhone Duo it is the
++// cover screen (466 x 678 points) even while the app runs unfolded on the inner one, so the
++// game measured the wrong screen. The window scene the app is on is the answer Apple points to
++// (UIScreen.mainScreen is deprecated in its favour), and the first window scene is the one
++// -ak_orderFront seeds the geometry from, so the answer does not change when the window appears.
++//
++// UIKit is read on the main thread only, where the guest's startup runs. Anywhere else, and
++// before there is a window scene, the answer is the main screen's, as it was.
++static inline void AKGuestDisplayFallback(CGSize *size, double *refresh) {
++    UIScreen *screen = UIScreen.mainScreen;
++    CGSize bounds = screen.bounds.size;
++    if (NSThread.isMainThread) {
++        for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
++            if (![scene isKindOfClass:UIWindowScene.class]) continue;
++            UIWindowScene *windowScene = (UIWindowScene *)scene;
++            CGSize sceneSize = windowScene.coordinateSpace.bounds.size;
++            if (windowScene.screen && sceneSize.width > 0 && sceneSize.height > 0) {
++                if (!CGSizeEqualToSize(sceneSize, bounds)) {
++                    // Said once per adapter: a device log shows the two screens disagreed and
++                    // which one the guest was given.
++                    static BOOL said;
++                    if (!said) {
++                        said = YES;
++                        AKLog(@"display: asked before the first window; answering with this app's window scene, %.0fx%.0f at %ld Hz, not the main screen's %.0fx%.0f",
++                              sceneSize.width, sceneSize.height, (long)windowScene.screen.maximumFramesPerSecond,
++                              bounds.width, bounds.height);
++                    }
++                }
++                screen = windowScene.screen;
++                bounds = sceneSize;
++            }
++            break;   // the first window scene, as -ak_orderFront takes it
++        }
++    }
++    if (size) *size = bounds;
++    if (refresh) *refresh = (double)screen.maximumFramesPerSecond;
++}
+diff --git a/translation/AppKit/Screens.m b/translation/AppKit/Screens.m
+index 8915efd..ab83d76 100644
+--- a/translation/AppKit/Screens.m
++++ b/translation/AppKit/Screens.m
+@@ -1,4 +1,5 @@
+ #import "AppKit.h"
++#import "AKGuestDisplayFallback.h"
+ // The window and CoreGraphics use this same validated value.
+ CGFloat AKGuestBackingScale(void) { return AKConfiguredGuestBackingScale(); }
+ 
+@@ -7,7 +8,8 @@ CGFloat AKGuestBackingScale(void) { return AKConfiguredGuestBackingScale(); }
+ + (NSArray *)screens { return @[self.mainScreen]; }
+ - (NSRect)frame {
+     CGSize size;
+-    return AKGetGuestDisplayGeometry(&size,NULL) ? (CGRect){CGPointZero,size} : UIScreen.mainScreen.bounds;
++    if (!AKGetGuestDisplayGeometry(&size,NULL)) AKGuestDisplayFallback(&size,NULL);
++    return (CGRect){CGPointZero,size};
+ }
+ - (NSRect)auxiliaryTopLeftArea { return CGRectZero; }
+ - (NSRect)auxiliaryTopRightArea { return CGRectZero; }
+@@ -16,11 +18,16 @@ CGFloat AKGuestBackingScale(void) { return AKConfiguredGuestBackingScale(); }
+ - (NSRect)visibleFrame { return self.frame; }
+ - (CGFloat)backingScaleFactor { return AKGuestBackingScale(); }
+ - (NSDictionary *)deviceDescription { return @{@"NSScreenNumber":@1,@"NSDeviceSize":[NSValue valueWithCGSize:self.frame.size],@"NSDeviceResolution":[NSValue valueWithCGSize:CGSizeMake(72,72)],@"NSDeviceBitsPerSample":@8,@"NSDeviceColorSpaceName":@"NSCalibratedRGBColorSpace"}; }
+-- (NSInteger)maximumFramesPerSecond { return UIScreen.mainScreen.maximumFramesPerSecond; }
++- (NSInteger)maximumFramesPerSecond {
++    // The same screen the frame describes, not UIScreen.mainScreen (see AKGuestDisplayFallback.h).
++    double refresh;
++    if (!AKGetGuestDisplayGeometry(NULL,&refresh)) AKGuestDisplayFallback(NULL,&refresh);
++    return MAX((NSInteger)1,(NSInteger)refresh);
++}
+ // No extended dynamic range is offered to the guest (1.0: standard range only).
+ - (CGFloat)maximumExtendedDynamicRangeColorComponentValue { return 1.0; }
+ - (CGFloat)maximumPotentialExtendedDynamicRangeColorComponentValue { return 1.0; }
+-- (NSTimeInterval)minimumRefreshInterval { return 1.0/UIScreen.mainScreen.maximumFramesPerSecond; }
++- (NSTimeInterval)minimumRefreshInterval { return 1.0/self.maximumFramesPerSecond; }
+ - (NSTimeInterval)maximumRefreshInterval { return 1.0/60.0; }   // a fixed estimate, not the panel's range
+ - (NSString *)localizedName { return @"iPad display"; }
+ @end
+diff --git a/translation/CoreGraphics/Displays.m b/translation/CoreGraphics/Displays.m
+index 0517d9e..bc14809 100644
+--- a/translation/CoreGraphics/Displays.m
++++ b/translation/CoreGraphics/Displays.m
+@@ -1,6 +1,7 @@
+ #import <UIKit/UIKit.h>
+ #include <stdint.h>
+ #import "AKSupport.h"
++#import "AKGuestDisplayFallback.h"
+ #import <Metal/Metal.h>
+ bool CGCursorIsVisible(void) { return !AKCursorIsHidden(); }
+ CGError CGAssociateMouseAndMouseCursorPosition(boolean_t connected) { AKMouseSetCaptured(!connected); return kCGErrorSuccess; }
+@@ -15,14 +16,12 @@ typedef void (*DisplayCallback)(CGDirectDisplayID, uint32_t, void *);
+ static NSDictionary *displayMode;
+ static CGRect guestDisplayBounds(void) {
+     CGSize size;
+-    return AKGetGuestDisplayGeometry(&size,NULL) ? (CGRect){CGPointZero,size} : UIScreen.mainScreen.bounds;
++    if (!AKGetGuestDisplayGeometry(&size,NULL)) AKGuestDisplayFallback(&size,NULL);
++    return (CGRect){CGPointZero,size};
+ }
+ static NSDictionary *mode(void) {
+     CGSize size; double refresh;
+-    if (!AKGetGuestDisplayGeometry(&size,&refresh)) {
+-        UIScreen *screen=UIScreen.mainScreen;
+-        size=screen.bounds.size; refresh=screen.maximumFramesPerSecond;
+-    }
++    if (!AKGetGuestDisplayGeometry(&size,&refresh)) AKGuestDisplayFallback(&size,&refresh);
+     CGFloat scale=AKConfiguredGuestBackingScale();
+     @synchronized(UIScreen.class) {
+         // A fold, rotation or window resize need not send UIScreenModeDidChange.

@@ -33,6 +33,12 @@ correctness.
 - **Closing page off-centre.** The "World of Warcraft Forever has closed" countdown page had no
   horizontal centring, so on the Duo's wide unfolded screen it sat to the right. It is now
   centred. (Upstream's page; a candidate to send upstream.)
+- **The game measured the cover screen while starting on the inner one.** Before its first
+  window, the game was told about iOS's "main screen", which on the Duo is the cover screen
+  (466 x 678 points), so its log read "Monitor 0 ... Size(678x466)" and its hardware detection
+  used that size while it played on the 951 x 669 point inner screen. It is now told about the
+  screen the app is on (patch 0903, a candidate for upstream). The window itself was always
+  resized correctly a moment later. *Not yet confirmed on the device.*
 
 ### Notes
 
@@ -78,4 +84,5 @@ correctness.
 
 ### Changed
 
-- The fork's own patches are numbered `09xx` (0901, 0902), apart from upstream's sequence.
+- The fork's own patches are numbered `09xx` (0901, 0902, and 0903 from 2026-11-26), apart from
+  upstream's sequence.
