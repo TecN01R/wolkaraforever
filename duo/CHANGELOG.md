@@ -16,8 +16,10 @@ correctness.
 
 - **Reset All WoW Settings.** A UI Manager button beside the graphics reset. It empties the
   game's `Config.wtf` except region, language, account name, the Battle.net agent's id, Gamepad
-  UI and the cache bookkeeping, after the usual backup, so every client setting returns to the
-  game's own defaults and its hardware detection runs again. Key bindings, macros, add-ons and
+  UI and the cache bookkeeping, after the usual backup, so the settings in that file (graphics,
+  sound, interface scale, gamepad) return to the game's own defaults and its hardware detection
+  runs again. Settings the game keeps per account or character (most camera, nameplate,
+  action-bar and chat options) live elsewhere and are not reset. Key bindings, macros, add-ons and
   their settings are kept. Tested on the Duo: the game came back at graphics level 4 with
   Render Scale 50%, its own choice for the unfolded screen (raise Render Scale again to taste).
 - **Jump instead of camera stick.** A switch in the in-game touch controls, under **Sticks and

@@ -37,8 +37,10 @@ and when, is in [CHANGELOG.md](CHANGELOG.md).
   camera stick goes, a round Jump button takes its place, and the camera turns by dragging on the
   game. *Installed on the Duo; not yet confirmed in play.*
 - **Reset All WoW Settings.** A UI Manager button that empties the game's `Config.wtf` except
-  region, language, account name and Gamepad UI, after the usual backup. The game then starts
-  with its own defaults and runs its hardware detection again. On the Duo it comes back at
+  region, language, account name and Gamepad UI, after the usual backup. Graphics, sound,
+  interface scale and gamepad settings go back to the game's defaults and its hardware detection
+  runs again; settings the game keeps per account or character (most camera, nameplate,
+  action-bar and chat options) are not reset. On the Duo it comes back at
   graphics level 4 with Render Scale 50%; raise Render Scale again if you'd set it higher.
 - **Render profile.** On the iPhone Duo, **Quality** renders at the screen's native scale, so the
   game's interface is drawn pixel for pixel. Lower the game's own Render Scale to keep the 3D
