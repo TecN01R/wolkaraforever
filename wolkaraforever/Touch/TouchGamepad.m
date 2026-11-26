@@ -293,6 +293,7 @@ static const CGFloat AKFloatRightMinX = 0.64, AKFloatRightMinY = 0.25, AKFloatRi
     UIButton *_editDone;
     UILabel *_hint;
     UISwitch *_editSwitch, *_hapticsSwitch, *_overlaySwitch, *_swapShouldersSwitch, *_sticksOnlySwitch, *_jumpOnlySwitch;
+    UIView *_jumpOnlyRow;
     UISwitch *_floatingSwitch, *_simpleSwitch, *_stickButtonsSwitch;
     UIButton *_addZoneButton, *_clearZoneButton;
     // The ability zones on screen, in the order the layout lists them.
@@ -873,8 +874,8 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
     NSArray *leftNames = @[@"dpad.up",@"dpad.right",@"dpad.down",@"dpad.left"];
     NSArray *rightNames = @[GCInputButtonY,GCInputButtonB,GCInputButtonA,GCInputButtonX];
     // Jump in place of the camera stick, in the fixed arrangement: A leaves its wedge and becomes
-    // one round button over the stick's own place, a little larger than the stick so a thumb
-    // that does not look still finds it. The floating arrangement keeps its corner jump.
+    // one round button centred on the stick's own place, a little smaller than the stick (88 pt
+    // before the size slider). The floating arrangement keeps its corner jump.
     AKGamepadButton *jump = _jumpButton;
     BOOL roundJump = [self jumpReplacesCameraStick] && !floating;
     for (NSUInteger i=0; i<4; i++) {
@@ -887,8 +888,8 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
     }
     if (roundJump) {
         if (jump.sector >= 0) jump.sector = -1;
-        jump.frame = CGRectMake(38,38,140,140); jump.layer.cornerRadius = 70;
-        jump.titleLabel.font = [UIFont systemFontOfSize:22 weight:UIFontWeightSemibold];
+        jump.frame = CGRectMake(64,64,88,88); jump.layer.cornerRadius = 44;
+        jump.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightSemibold];
     } else if (jump.layer.cornerRadius != 22) {
         // The loop above already gave A its wedge back; this undoes the rest of the round look.
         jump.layer.cornerRadius = 22;
@@ -1081,10 +1082,8 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
         sticksRow.axis = UILayoutConstraintAxisHorizontal; sticksRow.alignment = UIStackViewAlignmentCenter;
         [self fitSettingsRow:sticksRow];
         [options addArrangedSubview:sticksRow];
-        // Only meaningful with sticks only, so greyed without it (a row that vanished would move
-        // every row under it).
+        // Only meaningful with sticks only, so the row is shown only then.
         _jumpOnlySwitch = [UISwitch new]; _jumpOnlySwitch.on = _preferences.jumpReplacesCameraStick;
-        _jumpOnlySwitch.enabled = _preferences.sticksOnly;
         _jumpOnlySwitch.accessibilityLabel = AKHostLocalized(@"touch.settings.jumpReplacesCameraStick");
         _jumpOnlySwitch.accessibilityIdentifier = @"wolkaraforever.controls.jumpReplacesCameraStick";
         [_jumpOnlySwitch addTarget:self action:@selector(jumpOnlyChanged:) forControlEvents:UIControlEventValueChanged];
@@ -1092,6 +1091,7 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
         jumpRow.axis = UILayoutConstraintAxisHorizontal; jumpRow.alignment = UIStackViewAlignmentCenter;
         [self fitSettingsRow:jumpRow];
         [options addArrangedSubview:jumpRow];
+        _jumpOnlyRow = jumpRow; jumpRow.hidden = !_preferences.sticksOnly;
         // The floating arrangement belongs to the same interface, so its switch is here too.
         _floatingSwitch = [UISwitch new]; _floatingSwitch.on = _preferences.floatingSticks;
         _floatingSwitch.accessibilityLabel = AKHostLocalized(@"touch.settings.floatingSticks");
@@ -1216,7 +1216,7 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
 }
 - (void)sticksOnlyChanged:(UISwitch *)sender {
     [self reset]; _preferences.sticksOnly = sender.on; [_preferences save];
-    _jumpOnlySwitch.enabled = sender.on;
+    _jumpOnlyRow.hidden = !sender.on;
     [self updateAppearance];
 }
 - (void)jumpOnlyChanged:(UISwitch *)sender {
@@ -1239,7 +1239,7 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
 - (void)beginEditing:(UISwitch *)sender {
     if (!sender.on) return;
     [self reset]; _editing = YES; [_settings removeFromSuperview]; _settings = nil;
-    _sliders = nil; _values = nil; _editSwitch = nil; _hapticsSwitch = nil; _overlaySwitch = nil; _swapShouldersSwitch = nil; _sticksOnlySwitch = nil; _jumpOnlySwitch = nil; _floatingSwitch = nil; _settingsColumns = nil;
+    _sliders = nil; _values = nil; _editSwitch = nil; _hapticsSwitch = nil; _overlaySwitch = nil; _swapShouldersSwitch = nil; _sticksOnlySwitch = nil; _jumpOnlySwitch = nil; _jumpOnlyRow = nil; _floatingSwitch = nil; _settingsColumns = nil;
     _simpleSwitch = nil; _stickButtonsSwitch = nil; _addZoneButton = nil; _clearZoneButton = nil;
     [self updateAppearance]; if (self.configurationChanged) self.configurationChanged();
     // The zones' own menus (which button each sends) belong to the editor.
@@ -1251,7 +1251,7 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
     _hapticsSwitch.on = _preferences.hapticsEnabled; _swapShouldersSwitch.on = !_preferences.swapShoulders;
     _overlaySwitch.on = _preferences.performanceOverlayEnabled;
     _sticksOnlySwitch.on = _preferences.sticksOnly; _floatingSwitch.on = _preferences.floatingSticks;
-    _jumpOnlySwitch.on = _preferences.jumpReplacesCameraStick; _jumpOnlySwitch.enabled = _preferences.sticksOnly;
+    _jumpOnlySwitch.on = _preferences.jumpReplacesCameraStick; _jumpOnlyRow.hidden = !_preferences.sticksOnly;
     _simpleSwitch.on = _preferences.mode == AKGamepadLayoutModeSimple;
     _stickButtonsSwitch.on = _preferences.stickButtonsEnabled;
     [self syncAbilityZones]; [self updateSettingsZoneCount];
@@ -1259,7 +1259,7 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
 }
 - (void)finishConfiguration {
     [self reset]; [_preferences save]; _editing = NO; [_dragOrigins removeAllObjects];
-    [_settings removeFromSuperview]; _settings = nil; _sliders = nil; _values = nil; _editSwitch = nil; _hapticsSwitch = nil; _overlaySwitch = nil; _swapShouldersSwitch = nil; _sticksOnlySwitch = nil; _jumpOnlySwitch = nil; _floatingSwitch = nil; _settingsColumns = nil;
+    [_settings removeFromSuperview]; _settings = nil; _sliders = nil; _values = nil; _editSwitch = nil; _hapticsSwitch = nil; _overlaySwitch = nil; _swapShouldersSwitch = nil; _sticksOnlySwitch = nil; _jumpOnlySwitch = nil; _jumpOnlyRow = nil; _floatingSwitch = nil; _settingsColumns = nil;
     _simpleSwitch = nil; _stickButtonsSwitch = nil; _addZoneButton = nil; _clearZoneButton = nil;
     [self syncAbilityZones];
     [self updateAppearance]; if (self.configurationChanged) self.configurationChanged();

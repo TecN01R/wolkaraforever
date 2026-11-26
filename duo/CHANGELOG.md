@@ -20,8 +20,9 @@ correctness.
   game's own defaults and its hardware detection runs again. Key bindings, macros, add-ons and
   their settings are kept. *Not yet tested on a device.*
 - **Jump instead of camera stick.** A switch in the in-game touch controls, under **Sticks and
-  jump only**. With it on, the camera stick is not drawn, a round Jump button sits where it was,
-  and the camera turns by dragging on the game. Off by default. *Not yet tested on a device.*
+  jump only**, shown only while that is on. With it on, the camera stick is not drawn, a round
+  Jump button (88 pt before the size slider) sits where it was, and the camera turns by dragging
+  on the game. Off by default. *Installed on the Duo; not yet confirmed in play.*
 - The fork's build also runs the `Config.wtf` rules tests.
 
 ### Notes
