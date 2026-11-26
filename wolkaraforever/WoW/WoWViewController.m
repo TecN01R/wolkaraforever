@@ -272,7 +272,7 @@ static dispatch_queue_t TKForeverUIQueue(void) {
     UILabel *_stateLabel, *_detailLabel, *_versionLabel;
     UIButton *_editionButton, *_preferencesButton, *_languageButton, *_browserLoginButton, *_addonsButton, *_addonsDirectoryButton,
         *_voiceButton, *_voiceTestButton, *_touchpadButton, *_permissionsButton, *_primaryButton,
-        *_macEverButton, *_backupButton, *_resetButton, *_resetAllButton, *_restoreButton, *_settingsFolderButton,
+        *_macEverButton, *_backupButton, *_resetButton, *_restoreButton, *_settingsFolderButton,
         *_renderProfileButton, *_deviceProfileButton, *_batterySaverButton, *_interfaceModeButton,
         *_addonsBackupButton, *_addonsRestoreButton,
         *_layoutCreateButton, *_layoutRestoreButton, *_layoutBackupButton;
@@ -465,7 +465,6 @@ static dispatch_queue_t TKForeverUIQueue(void) {
     _touchpadButton=[self button:@"wow.touchpad" action:@selector(configureTouchpad)];
     _backupButton=[self button:@"wow.performance.backup" action:@selector(backupUI)];
     _resetButton=[self button:@"wow.performance.reset" action:@selector(resetGraphics)];
-    _resetAllButton=[self button:@"wow.performance.resetAll" action:@selector(resetAllSettings)];
     _restoreButton=[self button:@"wow.performance.restore" action:@selector(restoreUI)];
     _gamepadRow=[[TKWoWSwitchRow alloc] initWithTitle:@"" identifier:@"wow.performance.gamepad"
         target:self action:@selector(gamepadChanged:)];
@@ -508,7 +507,7 @@ static dispatch_queue_t TKForeverUIQueue(void) {
     // The gamepad switch is the first decision in the UI card: it changes whether the game
     // exposes its controller interface. Backup precedes Restore because restore replaces data.
     UIView *performanceBox=[self sectionBoxWithIdentifier:@"wow.box.performance"
-        rows:@[_gamepadRow,_backupButton,_restoreButton,_resetButton,_resetAllButton,_settingsFolderButton]];
+        rows:@[_gamepadRow,_backupButton,_restoreButton,_resetButton,_settingsFolderButton]];
     // The sixth card, in the cell that used to be the grid's spacer: the interface mode, and
     // the one place the recommendation row's own card sends a person to install it. It sits
     // beside UI Manager on a wide page and after it on a narrow one, and it changes no other
@@ -1055,13 +1054,12 @@ static dispatch_queue_t TKForeverUIQueue(void) {
             [TKForeverUI setStoredGamepadUI:YES];
         _gamepadEnabled=foreverDirectory?[TKForeverUI storedGamepadUI]:NO;
     }
-    for (UIButton *button in @[_backupButton,_resetButton,_resetAllButton,_restoreButton,_settingsFolderButton]) {
+    for (UIButton *button in @[_backupButton,_resetButton,_restoreButton,_settingsFolderButton]) {
         button.contentHorizontalAlignment=UIControlContentHorizontalAlignmentLeading;
         button.enabled=foreverReady;
     }
     [self configureButton:_backupButton title:WKLocalized(@"home.performance.backup") filled:NO];
     [self configureButton:_resetButton title:WKLocalized(@"home.performance.reset") filled:NO];
-    [self configureButton:_resetAllButton title:WKLocalized(@"home.performance.resetAll") filled:NO];
     [self configureButton:_restoreButton title:WKLocalized(@"home.performance.restore") filled:NO];
     [self configureButton:_settingsFolderButton title:WKLocalized(@"home.performance.settingsFolder") filled:NO];
     // The Launcher Manager's one row: which interface the guest runs. It is a setting, so it
@@ -1237,7 +1235,7 @@ static dispatch_queue_t TKForeverUIQueue(void) {
     _refreshItem.enabled=!_busy && !_sessionUsed && !_starting && !_running;
     for (UIButton *button in @[_editionButton,_preferencesButton,_addonsButton,_macEverButton,_addonsDirectoryButton,
                                 _addonsBackupButton,_addonsRestoreButton,
-                                _permissionsButton,_voiceButton,_voiceTestButton,_touchpadButton,_backupButton,_resetButton,_resetAllButton,
+                                _permissionsButton,_voiceButton,_voiceTestButton,_touchpadButton,_backupButton,_resetButton,
                                 _restoreButton,_settingsFolderButton,_interfaceModeButton,
                                 _batterySaverButton,
                                 _layoutCreateButton,_interfaceSetupButton,_layoutRestoreButton,_layoutBackupButton])
@@ -1688,47 +1686,6 @@ static dispatch_queue_t TKForeverUIQueue(void) {
             } else {
                 WKLog("ui", @"reset: graphics removed, backup kept");
                 [self presentMessage:WKLocalized(@"home.reset.done.title") message:WKLocalizedFormat(@"home.reset.done.message",backup)];
-            }
-        });
-    });
-}
-// Every client setting back to the game's defaults: the graphics reset's flow, with
-// TKForeverUI's full reset in place of the graphics one. Same rule - no backup, no reset.
-- (void)resetAllSettings {
-    if (![self foreverActionAllowed]) return;
-    NSString *directory=[self foreverWorkingDirectory];
-    if (!directory) return;
-    UIAlertController *sheet=[UIAlertController alertControllerWithTitle:WKLocalized(@"home.resetAll.confirm.title")
-        message:WKLocalized(@"home.resetAll.confirm.message")
-        preferredStyle:UIAlertControllerStyleAlert];
-    __weak TKWoWViewController *weakSelf=self;
-    [sheet addAction:[UIAlertAction actionWithTitle:WKLocalized(@"home.resetAll.action") style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
-        (void)action; [weakSelf performFullReset:directory];
-    }]];
-    [self presentSheet:sheet anchor:_resetAllButton];
-}
-- (void)performFullReset:(NSString *)directory {
-    if (_busy || _starting || _sessionUsed || _uiOperation) return;
-    _uiOperation=YES; [self render];
-    __weak TKWoWViewController *weakSelf=self;
-    dispatch_async(TKForeverUIQueue(), ^{
-        NSError *error=nil;
-        NSString *backup=[TKForeverUI createUIBackupInWorkingDirectory:directory edition:TKForeverUIEdition error:&error];
-        BOOL reset=backup?[TKForeverUI resetAllSettingsInWorkingDirectory:directory error:&error]:NO;
-        dispatch_async(dispatch_get_main_queue(), ^{
-            TKWoWViewController *self=weakSelf; if(!self) return;
-            self->_uiOperation=NO; [self render];
-            if (!backup) {
-                WKLog("ui", @"reset all: aborted, no backup: %@", error.localizedDescription?:@"unknown reason");
-                [self presentMessage:WKLocalized(@"home.reset.noBackup.title")
-                    message:WKLocalizedFormat(@"home.resetAll.noBackup.message",error.localizedDescription?:@"")];
-            } else if (!reset) {
-                WKLog("ui", @"reset all: backup kept, settings not reset: %@", error.localizedDescription?:@"unknown reason");
-                [self presentMessage:WKLocalized(@"home.reset.incomplete.title")
-                    message:WKLocalizedFormat(@"home.resetAll.incomplete.message",backup,error.localizedDescription?:@"")];
-            } else {
-                WKLog("ui", @"reset all: game settings removed, backup kept");
-                [self presentMessage:WKLocalized(@"home.resetAll.done.title") message:WKLocalizedFormat(@"home.resetAll.done.message",backup)];
             }
         });
     });

@@ -242,15 +242,14 @@ static void TestPreferences(void) {
     // dictionary, and a newer version's unknown key does not erase it.
     layout.opacity=.55; layout.rearScale=1.4; layout.frontScale=.7; layout.hapticsEnabled=NO;
     layout.swapShoulders=NO; layout.performanceOverlayEnabled=YES; layout.sticksOnly=NO;
-    layout.floatingSticks=YES; layout.jumpReplacesCameraStick=YES; [layout clearKeepFreeAreas];
+    layout.floatingSticks=YES; [layout clearKeepFreeAreas];
     [layout addKeepFreeAreaWithX:0.1 y:0.2 width:0.3 height:0.4];
     [layout moveItem:@"menu" toFrame:CGRectMake(10,20,44,44) inBounds:bounds];
     [layout save];
     AKGamepadLayout *relaunched=[[AKGamepadLayout alloc] initWithDefaults:defaults];
     assert(fabs(relaunched.opacity-.55)<.001 && fabs(relaunched.rearScale-1.4)<.001 &&
            fabs(relaunched.frontScale-.7)<.001 && !relaunched.hapticsEnabled && !relaunched.swapShoulders &&
-           relaunched.performanceOverlayEnabled && !relaunched.sticksOnly && relaunched.floatingSticks &&
-           relaunched.jumpReplacesCameraStick);
+           relaunched.performanceOverlayEnabled && !relaunched.sticksOnly && relaunched.floatingSticks);
     assert(relaunched.keepFree.count==1 && fabs(relaunched.keepFree[0][@"w"].doubleValue-0.3)<.001);
     assert(CGRectEqualToRect([relaunched frameForItem:@"menu" defaultFrame:frame inBounds:bounds],
                              [layout frameForItem:@"menu" defaultFrame:frame inBounds:bounds]));

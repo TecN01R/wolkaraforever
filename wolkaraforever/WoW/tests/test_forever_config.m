@@ -76,46 +76,12 @@ int main(void) {
         assert([TKForeverUI resetGraphicsInWorkingDirectory:root error:&error]);
         assert([Read(ConfigPath(root)) isEqual:@"SET portal \"us\"\r\nSET accountName \"ACC\"\r\n"]);
 
-        // --- the full reset keeps only where and as whom the game starts, the launcher's
-        // gamepad choice, the cache bookkeeping and lines that are not settings
-        NSString *full =
-            @"# a comment\r\n"
-             "SET portal \"eu\"\r\n"
-             "SET textLocale \"deDE\"\r\n"
-             "SET AUDIOLOCALE \"deDE\"\r\n"
-             "SET accountName \"ACC\"\r\n"
-             "SET agentUID \"wow_de\"\r\n"
-             "SET hwDetect \"0\"\r\n"
-             "SET graphicsQuality \"6\"\r\n"
-             "SET uiScale \"0.85\"\r\n"
-             "SET Sound_MasterVolume \"0.4\"\r\n"
-             "SET GamePadEnable \"1\"\r\n"
-             "SET GamePadCameraPitchSpeed \"2\"\r\n"
-             "SET CACHE-WQST-QuestV2HotfixCount \"8\"\r\n"
-             "SET unknownSetting \"gone\"\r\n";
-        Write(ConfigPath(root), full);
-        assert([TKForeverUI resetAllSettingsInWorkingDirectory:root error:&error]);
-        assert([Read(ConfigPath(root)) isEqual:
-            @"# a comment\r\n"
-             "SET portal \"eu\"\r\n"
-             "SET textLocale \"deDE\"\r\n"
-             "SET AUDIOLOCALE \"deDE\"\r\n"
-             "SET accountName \"ACC\"\r\n"
-             "SET agentUID \"wow_de\"\r\n"
-             "SET GamePadEnable \"1\"\r\n"
-             "SET CACHE-WQST-QuestV2HotfixCount \"8\"\r\n"]);
-        assert([Read(addon) isEqual:@"## Title: A\n"]);   // add-ons untouched
-        // Running it again changes nothing.
-        assert([TKForeverUI resetAllSettingsInWorkingDirectory:root error:&error]);
-        assert([Read(ConfigPath(root)) hasPrefix:@"# a comment\r\nSET portal"]);
-
         // --- a missing config is already at defaults
         NSString *bare = [[NSTemporaryDirectory() stringByAppendingPathComponent:@"forever-config-bare"]
                           stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
         assert([files createDirectoryAtPath:[bare stringByAppendingPathComponent:@"WTF"]
                     withIntermediateDirectories:YES attributes:nil error:NULL]);
         assert([TKForeverUI resetGraphicsInWorkingDirectory:bare error:&error]);
-        assert([TKForeverUI resetAllSettingsInWorkingDirectory:bare error:&error]);
         assert(![files fileExistsAtPath:ConfigPath(bare)]);
         assert(![TKForeverUI gamepadEnabledInWorkingDirectory:bare]);
 

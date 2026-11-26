@@ -96,7 +96,7 @@ jobs:
             launcher/WoW/DeviceProfile.m tests/test_device_profile.m -o build/wow-launcher/test_device_profile
           build/wow-launcher/test_device_profile
 
-      # The UI Manager's Config.wtf rules (graphics reset, full reset, gamepad, locale), the
+      # The UI Manager's Config.wtf rules (graphics reset, gamepad, locale), the
       # Config.wtf half of wolkaraforever/tools/test_forever_ui.sh. Foundation only.
       - name: Config.wtf rules tests
         run: |

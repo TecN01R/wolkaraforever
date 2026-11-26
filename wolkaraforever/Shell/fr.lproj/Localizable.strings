@@ -111,7 +111,6 @@
 "home.permissions" = "Autorisations (micro et reconnaissance vocale)";
 "home.performance.backup" = "Sauvegarder l’interface de WoW";
 "home.performance.reset" = "Réinitialiser la configuration de l’interface WoW";
-"home.performance.resetAll" = "Réinitialiser les réglages de WoW sur cet appareil";
 "home.performance.restore" = "Restaurer l’interface de WoW";
 "home.performance.settingsFolder" = "Ouvrir le dossier des réglages";
 "home.performance.gamepad" = "Interface manette";
@@ -244,13 +243,6 @@
 "home.reset.incomplete.message" = "Sauvegarde : %@. Les réglages graphiques n’ont pas pu être réinitialisés. %@";
 "home.reset.done.title" = "Graphismes réinitialisés";
 "home.reset.done.message" = "Les réglages graphiques par défaut s’appliqueront au prochain lancement de Forever. Sauvegarde : %@.";
-"home.resetAll.confirm.title" = "Réinitialiser les réglages de WoW sur cet appareil ?";
-"home.resetAll.confirm.message" = "Les réglages que le jeu conserve sur cet appareil, dans son fichier Config.wtf, reviennent aux valeurs par défaut du jeu au prochain démarrage de Forever : graphismes, son, échelle de l’interface et réglages de la manette, et le jeu détecte à nouveau votre matériel. Les réglages que le jeu conserve pour votre compte et vos personnages, dont la plupart des options de caméra, de barres de noms, de barres d’action et de discussion, ne sont pas dans ce fichier et ne sont pas réinitialisés. La région, la langue, le nom de votre compte et l’interface manette sont conservés, tout comme les raccourcis, les macros, les add-ons et leurs réglages. Une sauvegarde complète de WTF et Interface est faite avant, et « Restaurer l’interface de WoW » permet de tout récupérer.";
-"home.resetAll.action" = "Tout réinitialiser";
-"home.resetAll.noBackup.message" = "La sauvegarde n’a pas pu être créée, donc les réglages du jeu n’ont pas été touchés. %@";
-"home.resetAll.incomplete.message" = "Sauvegarde : %@. Les réglages du jeu n’ont pas pu être réinitialisés. %@";
-"home.resetAll.done.title" = "Réglages de WoW réinitialisés";
-"home.resetAll.done.message" = "Les réglages par défaut du jeu s’appliqueront au prochain lancement de Forever. Sauvegarde : %@.";
 "home.restore.none.title" = "Aucune sauvegarde à restaurer";
 "home.restore.none.message" = "Lancez d’abord « Sauvegarder l’interface de WoW » : ce sont ses fichiers ZIP qui apparaissent ici.";
 "home.restore.notBackup.title" = "Ce n’est pas une sauvegarde";
@@ -472,7 +464,6 @@
 "touch.settings.outerTriggers" = "Gâchettes à l’extérieur";
 "touch.settings.outerTriggers.simple" = "La disposition simple n’a pas de gâchettes à déplacer.";
 "touch.settings.sticksOnly" = "Sticks et saut seulement (masquer les autres boutons)";
-"touch.settings.jumpReplacesCameraStick" = "Saut à la place du stick caméra";
 "touch.settings.floatingSticks" = "Sticks flottants (sous le pouce, saut dans le coin)";
 "touch.settings.haptics" = "Retour haptique";
 "touch.settings.overlay" = "Affichage des performances";

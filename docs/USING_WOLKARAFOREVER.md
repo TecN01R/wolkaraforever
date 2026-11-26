@@ -50,7 +50,7 @@ A provider tab without a key shows one **Set up CurseForge access** row; opening
 
 ## Back up or recover your interface
 
-Use **UI Manager** before large interface changes. **Gamepad UI** is first; the launcher keeps its state and re-applies `GamePadEnable` to the active Forever `Config.wtf` before every start, so the game rewriting that file on exit cannot lose the choice. The game's own gamepad settings are left exactly as it wrote them. Create a backup before restoring a selected backup if the interface becomes unusable. **Reset to Default Wow UI Configuration** resets only graphics and display settings. **Reset WoW Settings on This Device** (this fork) resets every setting in `Config.wtf` except region, language, account name and Gamepad UI; key bindings, macros and add-ons are kept, and so are the settings the game keeps per account and character, such as most camera options. Recovery does not replace the game installation.
+Use **UI Manager** before large interface changes. **Gamepad UI** is first; the launcher keeps its state and re-applies `GamePadEnable` to the active Forever `Config.wtf` before every start, so the game rewriting that file on exit cannot lose the choice. The game's own gamepad settings are left exactly as it wrote them. Create a backup before restoring a selected backup if the interface becomes unusable. **Reset to Default Wow UI Configuration** resets only graphics and display settings. Recovery does not replace the game installation.
 
 ## Save battery while you play
 

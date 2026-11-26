@@ -21,23 +21,17 @@ correctness.
   asks iOS to hold it while the game is visible. The cover screen keeps turning as before. iOS
   does not promise to honour the request. *Not yet tested on the Duo.*
 
-- **Reset WoW Settings on This Device** (first named Reset All WoW Settings). A UI Manager button
-  beside the graphics reset. It empties the
-  game's `Config.wtf` except region, language, account name, the Battle.net agent's id, Gamepad
-  UI and the cache bookkeeping, after the usual backup, so the settings in that file (graphics,
-  sound, interface scale, gamepad) return to the game's own defaults and its hardware detection
-  runs again. Settings the game keeps per account or character (most camera, nameplate,
-  action-bar and chat options) live elsewhere and are not reset. Key bindings, macros, add-ons and
-  their settings are kept. Tested on the Duo: the game came back at graphics level 4 with
-  Render Scale 50%, its own choice for the unfolded screen (raise Render Scale again to taste).
-- **Jump instead of camera stick.** A switch in the in-game touch controls, under **Sticks and
-  jump only**, shown only while that is on. With it on, the camera stick is not drawn, a round
-  Jump button the size of the stick itself sits where it was, and touches there go to the game,
-  where dragging turns the camera. Off by default. *Confirmed in play on the Duo.*
 - **Reset Positions in the layout editor.** Beside **Done editing**: every control of the
   arrangement being edited (Full or Simple) goes back to its default place, after a one-item
   confirmation menu. Sizes, switches and ability zones stay. *Confirmed on the Duo.*
 - The fork's build also runs the `Config.wtf` rules tests.
+
+### Moved
+
+- **To the owner's `personal` branch:** *Reset WoW Settings on This Device* (a reset of the game's
+  whole `Config.wtf`, first named Reset All WoW Settings) and *Jump instead of camera stick*. Both
+  work on the Duo; they are one player's preferences rather than what this fork is for, so they
+  are not in its releases.
 
 ### Fixed
 
@@ -54,13 +48,6 @@ correctness.
   scene the player is using when there are several, the same one the game's window then goes
   on, and answers a question from another thread with the main thread's last answer instead of
   the main screen.
-- **Reset All promised more than it does.** It resets the game's `Config.wtf` only. WoW: Forever
-  keeps over half its settings (946 of 1,795, including 289 of 295 camera settings) per account
-  or character in other files, synced with Blizzard, and those were never reset. The button is
-  now **Reset WoW Settings on This Device** and its confirmation, in all three languages, says
-  which settings it resets and which it does not.
-- **Jump instead of camera stick's label** is now just its name. It had promised that dragging
-  turns the camera before that was tested; it has since been confirmed in play.
 - **Duo Quality after folding or unfolding.** The game's scale is fixed for a session, and
   Quality used the scale of whichever screen the launcher was on, so a session started folded
   drew 3x on the 2.8x inner screen after unfolding, about 14% more pixels than the panel. Quality

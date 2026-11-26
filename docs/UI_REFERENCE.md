@@ -95,7 +95,6 @@ button that starts, installs or repairs the game.
 | **Backup WoW UI Configuration** | Saves the game's interface settings (`WTF` and `Interface`) into one ZIP under `WTF/Backups`. | Tap before a large change. |
 | **Restore WoW UI Configuration** | Puts a saved interface back, after taking a safety copy of what is there now. | Tap, pick a backup, confirm. |
 | **Reset to Default Wow UI Configuration** | Removes only the game's graphics and display settings, after taking a safety copy: quality and its sliders, the raid and battleground set, render scale, anti-aliasing, gamma, the frame-rate caps and Target FPS, window and display mode. | Tap and confirm **Reset graphics**. It does not touch add-ons, key bindings or your installation. On the iPhone Duo (2026-11-26) the game came back at Graphics Quality 7, not the 4 its own detection reports, because the game's `hwDetect` marker stays. |
-| **Reset WoW Settings on This Device** (this fork) | Empties the game's `Config.wtf` except region, language, account name, the Battle.net agent's id, Gamepad UI and the cache bookkeeping (`CACHE-*`), after taking a safety copy. The settings kept in that file go back to the game's own defaults: graphics, sound, interface scale and gamepad settings, and its hardware detection runs again. Settings the game keeps per account or character (most camera, nameplate, action-bar and chat options) are not in that file and are not reset. | Tap and confirm **Reset all settings**, then start the game. Key bindings, macros, add-ons and their settings are kept; **Restore WoW UI Configuration** brings everything back. |
 | **Open Settings Folder** | Opens the game's `WTF` folder in the Files picker. | Tap to edit or copy `Config.wtf` by hand. |
 
 ### Launcher Manager card
@@ -333,7 +332,6 @@ each one is.
 | **Transparency** | How solid the on-screen controls are. |
 | **Shoulder button size**, **Sticks and face button size** | The size of the controls. |
 | **Sticks and jump only** | Hides every other button (phone layout). |
-| **Jump instead of camera stick** (this fork) | With **Sticks and jump only** on: the camera stick is not drawn, a round **Jump** button takes its place, and touches there go to the game itself, where dragging turns the camera. With floating sticks, the camera half of the screen goes to the game and the corner jump stays. Shown only while **Sticks and jump only** is on. |
 | **Floating sticks** | Sticks that find your thumb, with jump in the corner (phone layout). |
 | **Triggers on the outside** | Which side the shoulder buttons sit on. Greyed in the simple layout. |
 | **Haptic feedback** | Controller vibration. |

@@ -950,7 +950,6 @@ static const struct { __unsafe_unretained NSString *identifier; __unsafe_unretai
     {@"wow.performance.backup",         @"forever-ui writes and restores the user's own configuration on this device"},
     {@"wow.performance.restore",        @"forever-ui writes and restores the user's own configuration on this device"},
     {@"wow.performance.reset",          @"forever-ui writes and restores the user's own configuration on this device"},
-    {@"wow.performance.resetAll",       @"forever-ui writes and restores the user's own configuration on this device"},
     {@"wow.performance.gamepad",        @"forever-ui writes the game's own UI configuration and puts it back"},
     {@"wow.performance.batterySaverMode", @"it stores a pacing choice that applies to the next launch"},
     {@"wow.diagnostics",                @"the Diagnostics page runs probes of its own; the fixture presses it and the matrix reads its log"},
