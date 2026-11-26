@@ -38,7 +38,9 @@ and when, is in [CHANGELOG.md](CHANGELOG.md).
   device.*
 - **Jump instead of camera stick.** A touch-controls switch (with **Sticks and jump only**): the
   camera stick goes, a round Jump button takes its place, and touches there go to the game, where
-  dragging is meant to turn the camera. *Installed on the Duo; not yet confirmed in play.*
+  dragging turns the camera. *Confirmed in play on the Duo.*
+- **Reset Positions.** Beside **Done editing** in the in-game layout editor: every control of the
+  arrangement being edited goes back to its default place. *Confirmed on the Duo.*
 - **Reset WoW Settings on This Device.** A UI Manager button that empties the game's `Config.wtf` except
   region, language, account name and Gamepad UI, after the usual backup. Graphics, sound,
   interface scale and gamepad settings go back to the game's defaults and its hardware detection

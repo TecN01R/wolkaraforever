@@ -33,10 +33,10 @@ correctness.
 - **Jump instead of camera stick.** A switch in the in-game touch controls, under **Sticks and
   jump only**, shown only while that is on. With it on, the camera stick is not drawn, a round
   Jump button the size of the stick itself sits where it was, and touches there go to the game,
-  where dragging is meant to turn the camera. Off by default. *Installed on the Duo; not yet confirmed in play.*
+  where dragging turns the camera. Off by default. *Confirmed in play on the Duo.*
 - **Reset Positions in the layout editor.** Beside **Done editing**: every control of the
   arrangement being edited (Full or Simple) goes back to its default place, after a one-item
-  confirmation menu. Sizes, switches and ability zones stay. *Not yet tested on a device.*
+  confirmation menu. Sizes, switches and ability zones stay. *Confirmed on the Duo.*
 - The fork's build also runs the `Config.wtf` rules tests.
 
 ### Fixed
@@ -59,8 +59,8 @@ correctness.
   or character in other files, synced with Blizzard, and those were never reset. The button is
   now **Reset WoW Settings on This Device** and its confirmation, in all three languages, says
   which settings it resets and which it does not.
-- **Jump instead of camera stick claimed the drag turns the camera.** Not yet confirmed with
-  Gamepad UI on, so the switch's label no longer says so.
+- **Jump instead of camera stick's label** is now just its name. It had promised that dragging
+  turns the camera before that was tested; it has since been confirmed in play.
 - **Duo Quality after folding or unfolding.** The game's scale is fixed for a session, and
   Quality used the scale of whichever screen the launcher was on, so a session started folded
   drew 3x on the 2.8x inner screen after unfolding, about 14% more pixels than the panel. Quality
