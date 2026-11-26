@@ -874,8 +874,8 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
     NSArray *leftNames = @[@"dpad.up",@"dpad.right",@"dpad.down",@"dpad.left"];
     NSArray *rightNames = @[GCInputButtonY,GCInputButtonB,GCInputButtonA,GCInputButtonX];
     // Jump in place of the camera stick, in the fixed arrangement: A leaves its wedge and becomes
-    // one round button centred on the stick's own place, a little smaller than the stick (88 pt
-    // before the size slider). The floating arrangement keeps its corner jump.
+    // one round button in exactly the stick's own frame (104 pt before the size slider), without
+    // the face-button ring around it. The floating arrangement keeps its corner jump.
     AKGamepadButton *jump = _jumpButton;
     BOOL roundJump = [self jumpReplacesCameraStick] && !floating;
     for (NSUInteger i=0; i<4; i++) {
@@ -888,7 +888,7 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
     }
     if (roundJump) {
         if (jump.sector >= 0) jump.sector = -1;
-        jump.frame = CGRectMake(64,64,88,88); jump.layer.cornerRadius = 44;
+        jump.frame = _rightStick.frame; jump.layer.cornerRadius = _rightStick.frame.size.width / 2;
         jump.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightSemibold];
     } else if (jump.layer.cornerRadius != 22) {
         // The loop above already gave A its wedge back; this undoes the rest of the round look.
