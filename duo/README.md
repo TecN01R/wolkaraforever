@@ -12,6 +12,9 @@ and when, is in [CHANGELOG.md](CHANGELOG.md).
 
 ## How the fork differs from upstream
 
+The fork has two purposes: installing and running WolkaraForever without a Mac, and fixing it on
+the iPhone Duo. Everything below serves one of them.
+
 - **Built-in JIT.** The External JIT app carries an app extension, `WolkaraJITHelper.appex`.
   - It embeds [StikJIT](https://github.com/StikDebug/StikJIT) 2.0.1 (MPL-2.0, unmodified). CI
     downloads it from its release and pins it by checksum in
