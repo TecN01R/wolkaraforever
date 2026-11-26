@@ -21,7 +21,6 @@ NSString *const AKBatterySaverFrameLimitAutomaticName = @"auto";
 NSString *const AKBatterySaverFrameLimit30Name = @"30";
 NSString *const AKBatterySaverFrameLimit60Name = @"60";
 NSString *const AKBatterySaverFrameLimit40Name = @"40";
-NSString *const AKBatterySaverFrameLimit120Name = @"120";
 
 const double AKBatterySaverDimFramesPerSecond = 10.0;
 
@@ -39,7 +38,6 @@ AKBatterySaverFrameLimit AKBatterySaverFrameLimitFromStored(id value) {
     if ([text isEqual:AKBatterySaverFrameLimit30Name]) return AKBatterySaverFrameLimit30;
     if ([text isEqual:AKBatterySaverFrameLimit60Name]) return AKBatterySaverFrameLimit60;
     if ([text isEqual:AKBatterySaverFrameLimit40Name]) return AKBatterySaverFrameLimit40;
-    if ([text isEqual:AKBatterySaverFrameLimit120Name]) return AKBatterySaverFrameLimit120;
     // "off", a spelling this build does not know, and an old hand edit all mean the same
     // thing: no cap. Guessing a neighbouring value would switch on a cap the user never
     // chose.
@@ -52,7 +50,6 @@ NSString *AKBatterySaverFrameLimitStoredName(AKBatterySaverFrameLimit limit) {
         case AKBatterySaverFrameLimit30: return AKBatterySaverFrameLimit30Name;
         case AKBatterySaverFrameLimit60: return AKBatterySaverFrameLimit60Name;
         case AKBatterySaverFrameLimit40: return AKBatterySaverFrameLimit40Name;
-        case AKBatterySaverFrameLimit120: return AKBatterySaverFrameLimit120Name;
         case AKBatterySaverFrameLimitOff: break;
     }
     return AKBatterySaverFrameLimitOffName;
@@ -101,8 +98,8 @@ NSInteger AKBatterySaverStoredAFKMinutes(void) {
 }
 
 void AKBatterySaverSetFrameLimit(AKBatterySaverFrameLimit limit) {
-    // Normalised on the way in, so the stored spelling is always one of the six.
-    if (limit < AKBatterySaverFrameLimitOff || limit > AKBatterySaverFrameLimit120)
+    // Normalised on the way in, so the stored spelling is always one of the five.
+    if (limit < AKBatterySaverFrameLimitOff || limit > AKBatterySaverFrameLimit40)
         limit = AKBatterySaverFrameLimitOff;
     [NSUserDefaults.standardUserDefaults setObject:AKBatterySaverFrameLimitStoredName(limit)
                                            forKey:AKBatterySaverFrameLimitDefaultsKey];
@@ -165,12 +162,6 @@ AKBatterySaverFramePolicy AKBatterySaverFramePolicyMake(BOOL enabled,
         case AKBatterySaverFrameLimit60: fps = 60.0; break;
         case AKBatterySaverFrameLimit40: fps = 40.0; break;
         case AKBatterySaverFrameLimit30: fps = 30.0; break;
-        // 120 asks for no cap at all, so it only has a cap in Low Power Mode - where iOS
-        // limits the screen to 60 Hz anyway and the rule below gives every choice 30.
-        case AKBatterySaverFrameLimit120:
-            if (!lowPowerMode) return off;
-            fps = 30.0;
-            break;
         case AKBatterySaverFrameLimitOff: return off;
     }
     // Low Power Mode is the user telling the whole device to spend less. Device temperature is
@@ -197,42 +188,17 @@ BOOL AKBatterySaverDeviceHasExternalPower(void) {
 #endif
 }
 
-double AKBatterySaverFrameCeilingMake(BOOL highRefreshAllowed, BOOL enabled, AKBatterySaverFrameLimit limit) {
-    // Without the opt-in iOS already keeps an iPhone app at 60 Hz or below: nothing to add.
-    if (!highRefreshAllowed) return 0.0;
-    // 120 is the one choice that asks to go past 60, and only Battery Saver Mode applies it.
-    if (enabled && limit == AKBatterySaverFrameLimit120) return 0.0;
-    return 60.0;
-}
-
-AKBatterySaverFramePolicy AKBatterySaverFramePolicyWithCeiling(AKBatterySaverFramePolicy policy, double ceiling) {
-    if (!(ceiling > 0.0)) return policy;
-    if (!policy.capped || !(policy.framesPerSecond > 0.0)) {
-        AKBatterySaverFramePolicy held = { YES, ceiling };
-        return held;
-    }
-    if (policy.framesPerSecond > ceiling) policy.framesPerSecond = ceiling;
-    return policy;
-}
-
 BOOL AKBatterySaverHighRefreshAllowed(void) {
     id value = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CADisableMinimumFrameDurationOnPhone"];
     return [value isKindOfClass:NSNumber.class] && [(NSNumber *)value boolValue];
 }
 
-double AKBatterySaverLaunchFrameCeiling(void) {
-    return AKBatterySaverFrameCeilingMake(AKBatterySaverHighRefreshAllowed(),
-                                          AKBatterySaverLaunchEnabled(),
-                                          AKBatterySaverLaunchFrameLimit());
-}
-
 AKBatterySaverFramePolicy AKBatterySaverResolvedPolicy(BOOL dimmed) {
-    AKBatterySaverFramePolicy policy = AKBatterySaverFramePolicyMake(AKBatterySaverLaunchEnabled(),
-                                                                     AKBatterySaverLaunchFrameLimit(),
-                                                                     AKBatterySaverDeviceHasExternalPower(),
-                                                                     NSProcessInfo.processInfo.isLowPowerModeEnabled,
-                                                                     dimmed);
-    return AKBatterySaverFramePolicyWithCeiling(policy, AKBatterySaverLaunchFrameCeiling());
+    return AKBatterySaverFramePolicyMake(AKBatterySaverLaunchEnabled(),
+                                         AKBatterySaverLaunchFrameLimit(),
+                                         AKBatterySaverDeviceHasExternalPower(),
+                                         NSProcessInfo.processInfo.isLowPowerModeEnabled,
+                                         dimmed);
 }
 
 double AKBatterySaverFramePolicyInterval(AKBatterySaverFramePolicy policy) {

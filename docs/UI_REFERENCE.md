@@ -84,7 +84,7 @@ button that starts, installs or repairs the game.
 | --- | --- | --- |
 | **Device profile: Automatic — …** | Which measured device profile the page draws for, and therefore which render scales are offered. | Opens [Device profile](#device-profile). Automatic follows the device it is running on. |
 | **Render profile: Performance** | How much the game draws at, from Performance through Balanced to Quality. | Opens [Render profile](#render-profile). |
-| **Battery Saver Mode** (switch) | Whether any battery-saving choice applies at all. **Off** is full performance: no frame limit, no AFK dim, and nothing installed on the game's presentation path, apart from the 60 FPS ceiling on this personal branch, whose app is allowed 120 Hz. | Switch on, then choose on [Battery Saver options](#battery-saver). |
+| **Battery Saver Mode** (switch) | Whether any battery-saving choice applies at all. **Off** is full performance: no frame limit, no AFK dim, and nothing installed on the game's presentation path. | Switch on, then choose on [Battery Saver options](#battery-saver). |
 | **Battery Saver Options** | Opens the page holding the frame limit and the AFK saver. It opens whether the switch above is on or off, and the choices are remembered either way. | Opens [Battery Saver Options](#battery-saver). |
 
 ### UI Manager card
@@ -189,7 +189,7 @@ game that is already running. Nothing here writes a game setting.
 
 | Choice | What it does |
 | --- | --- |
-| **Frame limit** | Off, **Automatic** (60 frames per second on power, 30 on battery), **30 FPS**, **40 FPS**, **60 FPS** or **120 FPS (ProMotion)**. 40 and 120 exist only on the personal branch, whose app declares the 120 Hz opt-in: 40 asks iOS for the screen's 40 Hz step (or 80 or 120 Hz) and holds each frame for 25 ms, and 120 asks for 120 Hz with no cap. Every other choice, and Battery Saver Mode off, holds the game at 60 or below. Low Power Mode lowers any choice to 30; device temperature never changes it. The cap is applied to the frames the game already renders. |
+| **Frame limit** | Off, **Automatic** (60 frames per second on power, 30 on battery), **30 FPS**, **40 FPS** or **60 FPS**. **40 FPS** exists only on the personal branch, whose app declares the 120 Hz opt-in: it asks iOS for the screen's 40 Hz step (or 80 or 120 Hz) and holds each frame for 25 ms. There, with the limit **Off**, the game's own Max Foreground FPS decides, up to 120. Low Power Mode lowers any cap to 30; device temperature never changes it. The cap is applied to the frames the game already renders, so **Off** costs nothing. |
 | **AFK saver** | Off, 2, 5 or 10 minutes. After that long without input the screen dims and the game is held at 10 frames per second. The first touch, key, mouse action or controller action only wakes it — it is not delivered to the game. Dimming pauses while anything is held, while the in-game touch configuration is open, and while the app is not in front. |
 
 The current choice in each group is marked with a check.

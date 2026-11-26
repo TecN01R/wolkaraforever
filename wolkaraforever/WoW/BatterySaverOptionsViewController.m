@@ -43,7 +43,6 @@
         [self row:@"batterySaver.limit.30" tag:AKBatterySaverFrameLimit30 action:@selector(limitChosen:)],
         [self row:@"batterySaver.limit.40" tag:AKBatterySaverFrameLimit40 action:@selector(limitChosen:)],
         [self row:@"batterySaver.limit.60" tag:AKBatterySaverFrameLimit60 action:@selector(limitChosen:)],
-        [self row:@"batterySaver.limit.120" tag:AKBatterySaverFrameLimit120 action:@selector(limitChosen:)],
     ];
     [rows addArrangedSubview:[self card:_limitButtons]];
     [rows addArrangedSubview:WKNote(WKLocalized(@"home.batterySaver.frameLimit.message"))];
@@ -114,7 +113,6 @@
         case AKBatterySaverFrameLimit30: return WKLocalized(@"home.batterySaver.frame.30");
         case AKBatterySaverFrameLimit60: return WKLocalized(@"home.batterySaver.frame.60");
         case AKBatterySaverFrameLimit40: return WKLocalized(@"home.batterySaver.frame.40");
-        case AKBatterySaverFrameLimit120: return WKLocalized(@"home.batterySaver.frame.120");
         case AKBatterySaverFrameLimitOff: break;
     }
     return WKLocalized(@"home.batterySaver.off");

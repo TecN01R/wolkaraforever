@@ -8,8 +8,7 @@
 //
 // What it is not. Nothing here writes a game CVar, a Config.wtf entry or any other game
 // data. The cap lives entirely in the presentation call this app makes on the game's
-// behalf, and "Off" makes no call at all - except in an app with the 120 Hz opt-in, where
-// Off still holds the 60 FPS ceiling (AKBatterySaverFrameCeilingMake).
+// behalf, and "Off" makes no call at all.
 //
 // Every stored value is validated on the way in: an unknown string, an old spelling or a
 // number the app never offered resolves to Off, which is what an installation that has
@@ -26,10 +25,10 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark - Keys and spellings
 
 /// Whether Battery Saver Mode is on at all. Off is full performance: no frame limit, no AFK
-/// dim, and no presentation hook installed (in an app with the 120 Hz opt-in, only the 60 FPS
-/// ceiling). The default for an installation that never chose the old independent options.
+/// dim, and no presentation hook installed. The default for an installation that never chose
+/// the old independent options.
 FOUNDATION_EXPORT NSString *const AKBatterySaverEnabledDefaultsKey;      // "WolkaraForeverBatterySaverEnabledV1"
-/// The frame limit the user selected: "off", "auto", "30", "40", "60" or "120".
+/// The frame limit the user selected: "off", "auto", "30", "40" or "60".
 FOUNDATION_EXPORT NSString *const AKBatterySaverFrameLimitDefaultsKey;   // "WolkaraForeverBatterySaverFrameLimitV1"
 /// The idle timeout in minutes: 0 (off), 2, 5 or 10.
 FOUNDATION_EXPORT NSString *const AKBatterySaverAFKMinutesDefaultsKey;   // "WolkaraForeverBatterySaverAFKMinutesV1"
@@ -44,7 +43,6 @@ FOUNDATION_EXPORT NSString *const AKBatterySaverFrameLimitAutomaticName;  // "au
 FOUNDATION_EXPORT NSString *const AKBatterySaverFrameLimit30Name;         // "30"
 FOUNDATION_EXPORT NSString *const AKBatterySaverFrameLimit60Name;         // "60"
 FOUNDATION_EXPORT NSString *const AKBatterySaverFrameLimit40Name;         // "40"
-FOUNDATION_EXPORT NSString *const AKBatterySaverFrameLimit120Name;        // "120"
 
 /// The fixed rate a dimmed session is held at, whatever was chosen.
 FOUNDATION_EXPORT const double AKBatterySaverDimFramesPerSecond;          // 10
@@ -56,19 +54,17 @@ typedef NS_ENUM(NSInteger, AKBatterySaverFrameLimit) {
     AKBatterySaverFrameLimitAutomatic,
     AKBatterySaverFrameLimit30,
     AKBatterySaverFrameLimit60,
-    // The two below need the app's 120 Hz opt-in (CADisableMinimumFrameDurationOnPhone).
-    // Without it an iPhone app is shown on a 60 Hz rhythm, where a 25 ms frame alternates
-    // 16.7 and 33.3 ms - measured on an iPhone Duo with the game's own 40 FPS cap.
-    /// 40 FPS: every third refresh of a 120 Hz screen. Added after 60 so stored raw values
-    /// and the older four keep their meaning.
+    /// 40 FPS: every third refresh of a 120 Hz screen. It needs the app's 120 Hz opt-in
+    /// (CADisableMinimumFrameDurationOnPhone, personal branch): without it an iPhone app is
+    /// shown on a 60 Hz rhythm, where a 25 ms frame alternates 16.7 and 33.3 ms - seen on an
+    /// iPhone Duo with the game's own 40 FPS cap. Added after 60 so stored raw values and the
+    /// older four keep their meaning.
     AKBatterySaverFrameLimit40,
-    /// No cap, and the only choice that lifts the 60 FPS ceiling (see below).
-    AKBatterySaverFrameLimit120,
 };
 
 #pragma mark - Reading and writing the stored choice
 
-/// A stored value resolved against the schema. Anything that is not one of the six
+/// A stored value resolved against the schema. Anything that is not one of the five
 /// spellings is Off - never a nearest guess, because a cap nobody asked for is worse than
 /// no cap at all.
 FOUNDATION_EXPORT AKBatterySaverFrameLimit AKBatterySaverFrameLimitFromStored(id _Nullable value);
@@ -115,7 +111,6 @@ typedef struct AKBatterySaverFramePolicy {
 ///                whatever the other arguments say. The master switch outranks all of them.
 ///   Automatic  - 60 FPS on external power, 30 FPS on battery.
 ///   30/40/60   - that rate.
-///   120        - no cap (the ceiling below is lifted too); Low Power Mode makes it 30 FPS.
 ///   any cap    - Low Power Mode lowers a rate above 30 FPS to 30 FPS. Device temperature is
 ///                deliberately not an input: a hot iPad must not quietly change the pacing the
 ///                player chose. Off stays Off.
@@ -127,26 +122,12 @@ FOUNDATION_EXPORT AKBatterySaverFramePolicy AKBatterySaverFramePolicyMake(BOOL e
                                                                          BOOL lowPowerMode,
                                                                          BOOL dimmed);
 
-/// The highest rate the game may present at when nothing lower applies. An app that declares
-/// CADisableMinimumFrameDurationOnPhone may be shown at up to 120 Hz, and the game, which
-/// caps nothing by default, would then render up to 120 FPS - more heat than any choice
-/// here asked for. So with the opt-in present every session is held at 60 FPS unless the
-/// player picked 120 with Battery Saver Mode on. 0 means no ceiling: an app without the
-/// opt-in, or the 120 choice. Like the policy above, a rule with every input named.
-FOUNDATION_EXPORT double AKBatterySaverFrameCeilingMake(BOOL highRefreshAllowed, BOOL enabled,
-                                                        AKBatterySaverFrameLimit limit);
-/// The policy with a ceiling applied: an uncapped policy becomes the ceiling, a faster cap is
-/// lowered to it, and a ceiling of 0 changes nothing.
-FOUNDATION_EXPORT AKBatterySaverFramePolicy AKBatterySaverFramePolicyWithCeiling(AKBatterySaverFramePolicy policy,
-                                                                               double ceiling);
-/// Whether this app declares CADisableMinimumFrameDurationOnPhone in its Info.plist.
+/// Whether this app declares CADisableMinimumFrameDurationOnPhone in its Info.plist, so iOS
+/// may show it above 60 Hz. Read for the log; it changes no rule here.
 FOUNDATION_EXPORT BOOL AKBatterySaverHighRefreshAllowed(void);
-/// The ceiling for this guest: its launch snapshot and the app's Info.plist.
-FOUNDATION_EXPORT double AKBatterySaverLaunchFrameCeiling(void);
 
 /// The same rule, reading the live device: the launch snapshot, the charger and Low Power
-/// Mode (not the thermal state; see above), with the launch ceiling applied. `dimmed` is the
-/// AppKit adapter's idle state.
+/// Mode (not the thermal state; see above). `dimmed` is the AppKit adapter's idle state.
 FOUNDATION_EXPORT AKBatterySaverFramePolicy AKBatterySaverResolvedPolicy(BOOL dimmed);
 
 /// Whether this device is on external power. Never changes the battery's own state: it
