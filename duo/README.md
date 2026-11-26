@@ -26,7 +26,8 @@ and when, is in [CHANGELOG.md](CHANGELOG.md).
   runs the same steps itself and shows them.
 - **The screen the game measures at start.** Patch 0903: before the game's first window, its
   display questions are answered with the screen the app is on, not iOS's "main screen" (the
-  cover screen on the Duo, 466 x 678 points). *Not yet confirmed on the device.*
+  cover screen on the Duo, 466 x 678 points). Confirmed on the Duo: the game now logs
+  "Monitor 0 ... Size(951x669)" unfolded.
 - **iOS on Duo touch.** Patch 0901 makes direct touch follow the interface mode, so it also works
   with **iOS on Duo**.
 - **Stay signed in.** The experimental Battle.net login can keep its web session between app

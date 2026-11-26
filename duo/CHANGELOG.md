@@ -38,7 +38,8 @@ correctness.
   (466 x 678 points), so its log read "Monitor 0 ... Size(678x466)" and its hardware detection
   used that size while it played on the 951 x 669 point inner screen. It is now told about the
   screen the app is on (patch 0903, a candidate for upstream). The window itself was always
-  resized correctly a moment later. *Not yet confirmed on the device.*
+  resized correctly a moment later. Confirmed on the Duo: unfolded, the game now logs
+  "Monitor 0 ... Size(951x669) ... Refresh Rate(120Hz)".
 
 ### Notes
 
