@@ -10,6 +10,23 @@ published as a [release](https://github.com/TecN01R/wolkaraforever/releases) nam
 Unofficial and unsupported: only tested on one iPhone Duo, with no claims about effectiveness or
 correctness.
 
+## 2026-11-26
+
+### Added
+
+- **Reset All WoW Settings.** A UI Manager button beside the graphics reset. It empties the
+  game's `Config.wtf` except region, language, account name, the Battle.net agent's id, Gamepad
+  UI and the cache bookkeeping, after the usual backup, so every client setting returns to the
+  game's own defaults and its hardware detection runs again. Key bindings, macros, add-ons and
+  their settings are kept. *Not yet tested on a device.*
+- The fork's build also runs the `Config.wtf` rules tests.
+
+### Notes
+
+- The graphics-only reset leaves the game's `hwDetect` marker in place. On the Duo the game then
+  came back at Graphics Quality 7, not the 4 its detection reports. The graphics reset is
+  unchanged.
+
 ## 2026-11-25
 
 ### Added

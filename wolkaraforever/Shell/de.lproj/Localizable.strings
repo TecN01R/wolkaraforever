@@ -114,6 +114,7 @@
 "home.permissions" = "Berechtigungen (Mikrofon & Spracherkennung)";
 "home.performance.backup" = "WoW-Oberflächenkonfiguration sichern";
 "home.performance.reset" = "WoW-Oberflächenkonfiguration zurücksetzen";
+"home.performance.resetAll" = "Alle WoW-Einstellungen zurücksetzen";
 "home.performance.restore" = "WoW-Oberflächenkonfiguration wiederherstellen";
 "home.performance.settingsFolder" = "Einstellungsordner öffnen";
 "home.performance.gamepad" = "Gamepad-Oberfläche";
@@ -241,6 +242,13 @@
 "home.reset.incomplete.message" = "Die Sicherung liegt unter %@, aber die Grafikeinstellungen konnten nicht zurückgesetzt werden. %@";
 "home.reset.done.title" = "Grafik zurückgesetzt";
 "home.reset.done.message" = "Die Standardgrafikeinstellungen gelten beim nächsten Start von Forever. Sicherung: %@.";
+"home.resetAll.confirm.title" = "Alle WoW-Einstellungen zurücksetzen?";
+"home.resetAll.confirm.message" = "Jede Einstellung in der Config.wtf des Spiels kehrt beim nächsten Start von Forever zu den Standardwerten des Spiels zurück: Grafik, Ton, Oberflächenskalierung, Kamera und Steuerung. Region, Sprache, dein Accountname und die Gamepad-Oberfläche bleiben erhalten, ebenso Tastenbelegungen, Makros, Add-ons und deren Einstellungen. Zuvor wird eine vollständige Sicherung von WTF und Interface erstellt; „WoW-Oberflächenkonfiguration wiederherstellen“ kann alles zurückbringen.";
+"home.resetAll.action" = "Alle Einstellungen zurücksetzen";
+"home.resetAll.noBackup.message" = "Die Sicherung konnte nicht erstellt werden, daher blieben die Spieleinstellungen unverändert. %@";
+"home.resetAll.incomplete.message" = "Die Sicherung liegt unter %@, aber die Spieleinstellungen konnten nicht zurückgesetzt werden. %@";
+"home.resetAll.done.title" = "WoW-Einstellungen zurückgesetzt";
+"home.resetAll.done.message" = "Die Standardeinstellungen des Spiels gelten beim nächsten Start von Forever. Sicherung: %@.";
 "home.restore.none.title" = "Keine Sicherung zum Wiederherstellen";
 "home.restore.none.message" = "Führen Sie zuerst „WoW-Oberflächenkonfiguration sichern“ aus; die ZIP-Dateien daraus zeigt dieser Browser.";
 "home.restore.notBackup.title" = "Keine Sicherung";

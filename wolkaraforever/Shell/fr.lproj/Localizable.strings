@@ -111,6 +111,7 @@
 "home.permissions" = "Autorisations (micro et reconnaissance vocale)";
 "home.performance.backup" = "Sauvegarder l’interface de WoW";
 "home.performance.reset" = "Réinitialiser la configuration de l’interface WoW";
+"home.performance.resetAll" = "Réinitialiser tous les réglages de WoW";
 "home.performance.restore" = "Restaurer l’interface de WoW";
 "home.performance.settingsFolder" = "Ouvrir le dossier des réglages";
 "home.performance.gamepad" = "Interface manette";
@@ -243,6 +244,13 @@
 "home.reset.incomplete.message" = "Sauvegarde : %@. Les réglages graphiques n’ont pas pu être réinitialisés. %@";
 "home.reset.done.title" = "Graphismes réinitialisés";
 "home.reset.done.message" = "Les réglages graphiques par défaut s’appliqueront au prochain lancement de Forever. Sauvegarde : %@.";
+"home.resetAll.confirm.title" = "Réinitialiser tous les réglages de WoW ?";
+"home.resetAll.confirm.message" = "Chaque réglage du fichier Config.wtf du jeu revient aux valeurs par défaut du jeu au prochain démarrage de Forever : graphismes, son, échelle de l’interface, caméra et commandes. La région, la langue, le nom de votre compte et l’interface manette sont conservés, tout comme les raccourcis, les macros, les add-ons et leurs réglages. Une sauvegarde complète de WTF et Interface est faite avant, et « Restaurer l’interface de WoW » permet de tout récupérer.";
+"home.resetAll.action" = "Tout réinitialiser";
+"home.resetAll.noBackup.message" = "La sauvegarde n’a pas pu être créée, donc les réglages du jeu n’ont pas été touchés. %@";
+"home.resetAll.incomplete.message" = "Sauvegarde : %@. Les réglages du jeu n’ont pas pu être réinitialisés. %@";
+"home.resetAll.done.title" = "Réglages de WoW réinitialisés";
+"home.resetAll.done.message" = "Les réglages par défaut du jeu s’appliqueront au prochain lancement de Forever. Sauvegarde : %@.";
 "home.restore.none.title" = "Aucune sauvegarde à restaurer";
 "home.restore.none.message" = "Lancez d’abord « Sauvegarder l’interface de WoW » : ce sont ses fichiers ZIP qui apparaissent ici.";
 "home.restore.notBackup.title" = "Ce n’est pas une sauvegarde";

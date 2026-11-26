@@ -95,6 +95,18 @@ jobs:
             launcher/WoW/DeviceProfile.m tests/test_device_profile.m -o build/wow-launcher/test_device_profile
           build/wow-launcher/test_device_profile
 
+      # The UI Manager's Config.wtf rules (graphics reset, full reset, gamepad, locale), the
+      # Config.wtf half of wolkaraforever/tools/test_forever_ui.sh. Foundation only.
+      - name: Config.wtf rules tests
+        run: |
+          cd build/platform && mkdir -p build/forever-ui
+          for source in launcher/WoW/ForeverUI.m launcher/App/WKLocalization.m tests/test_forever_config.m; do
+            xcrun clang -fobjc-arc -Wall -Wextra -Werror -Wno-deprecated-declarations -Ilauncher/WoW \
+              -c "$source" -o "build/forever-ui/$(basename "$source" .m).o"
+          done
+          xcrun clang -fobjc-arc build/forever-ui/*.o -framework Foundation -o build/forever-ui/test_forever_config
+          build/forever-ui/test_forever_config
+
       - name: Checksum
         run: |
           shasum -a 256 "$IPA" | tee "$IPA.sha256"

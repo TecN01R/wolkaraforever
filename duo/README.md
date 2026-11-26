@@ -29,6 +29,9 @@ and when, is in [CHANGELOG.md](CHANGELOG.md).
 - **Stay signed in.** The experimental Battle.net login can keep its web session between app
   launches (opt-in, in the login sheet; upstream keeps it in memory only). *Not yet tested on a
   device.*
+- **Reset All WoW Settings.** A UI Manager button that empties the game's `Config.wtf` except
+  region, language, account name and Gamepad UI, after the usual backup. The game then starts
+  with its own defaults and runs its hardware detection again. *Not yet tested on a device.*
 - **Render profile.** On the iPhone Duo, **Quality** renders at the screen's native scale, so the
   game's interface is drawn pixel for pixel. Lower the game's own Render Scale to keep the 3D
   light. Balanced (2x) stays the default. Confirmed on the Duo (2026-11-25): its native scale is
