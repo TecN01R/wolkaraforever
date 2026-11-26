@@ -78,8 +78,9 @@ jobs:
           test -f vendor/StikJIT.xcframework/ios-arm64/StikJIT.framework/universal.js
 
       # Same commands as release.yml: the platform packager, then the repository's verifier
-      # (one app, no extension, no profile, no team, memory entitlements declared, root
-      # certificates present - without them every Battle.net login fails with BLZ51900003).
+      # (one app, the Built-in JIT helper as its only extension, no profile, no team, memory
+      # entitlements and Game Mode declared, root certificates present - without them every
+      # Battle.net login fails with BLZ51900003).
       - name: Build the unsigned .ipa
         run: wolkaraforever/tools/package_ipa.sh "$IPA"
 
