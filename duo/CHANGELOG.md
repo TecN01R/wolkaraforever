@@ -14,6 +14,19 @@ correctness.
 
 ### Added
 
+- **Battery Saver 40 FPS and 120 FPS (ProMotion), personal branch only** (patch 0905). On the
+  Duo, the game's own 40 FPS cap gave uneven frames, because iOS shows an iPhone app without
+  the 120 Hz opt-in on a 60 Hz rhythm. The personal branch's app now declares
+  `CADisableMinimumFrameDurationOnPhone`, and Battery Saver offers:
+  - **40**, which asks iOS for the screen's 40 Hz step (or 80 or 120 Hz) and holds each frame for
+    25 ms. Without 120 Hz it falls to a steady 30.
+  - **120**, which asks for 120 Hz with no cap.
+  
+  Every other choice, and Battery Saver Mode off, holds the game at 60 FPS. Low Power Mode makes
+  every choice 30. A 40 or 120 session logs, once a second, the panel's refresh rate and how
+  long frames stayed on screen. Upstream keeps 60 Hz on purpose, for heat, so this stays off the
+  main branch. *Not yet tested on the Duo.*
+
 - **Unfolded, the game stays in landscape** (patch 0904). On the Duo's inner screen iOS treated
   the app as resizable and turned it to portrait, despite the iPhone's landscape-only setting
   (from iOS 27 that setting is a preference). On a phone screen at least 600 points on its

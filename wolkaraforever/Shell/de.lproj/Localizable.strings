@@ -124,12 +124,14 @@
 "home.batterySaver.options.note" = "Diese Einstellungen gelten, wenn der Akku-Sparmodus an ist, und ab dem nächsten Spielstart. Die Auswahl bleibt so oder so gespeichert.";
 "batterySaver.selected" = "Ausgewählt";
 "home.batterySaver.frameLimit.title" = "Bildrate begrenzen";
-"home.batterySaver.frameLimit.message" = "Automatisch sind 60 FPS am Strom und 30 FPS im Akkubetrieb. Der Energiesparmodus senkt jede Grenze auf 30 FPS; die Gerätetemperatur ändert sie nie. Gilt ab dem nächsten Spielstart.";
+"home.batterySaver.frameLimit.message" = "Automatisch sind 60 FPS am Strom und 30 FPS im Akkubetrieb. 40 und 120 nutzen die 120 Hz des Bildschirms: 40 bleibt flüssig, weil jede dritte Bildwiederholung gezeigt wird, und 120 hebt die Grenze auf, sodass das Telefon wärmer wird. Jede andere Wahl und ein ausgeschalteter Akku-Sparmodus halten das Spiel bei höchstens 60 FPS. Der Energiesparmodus senkt jede Wahl auf 30 FPS; die Gerätetemperatur ändert sie nie. Gilt ab dem nächsten Spielstart.";
 "home.batterySaver.afk.title" = "Leerlauf sparen";
 "home.batterySaver.afk.message" = "Nach dieser Zeit ohne Eingabe wird der Bildschirm gedimmt und das Spiel auf 10 FPS begrenzt. Die erste Berührung, Taste, Maus- oder Controller-Eingabe weckt es nur. Gilt ab dem nächsten Spielstart.";
 "home.batterySaver.frame.automatic" = "Automatisch";
 "home.batterySaver.frame.30" = "30 FPS";
+"home.batterySaver.frame.40" = "40 FPS";
 "home.batterySaver.frame.60" = "60 FPS";
+"home.batterySaver.frame.120" = "120 FPS (ProMotion)";
 "home.batterySaver.afk.2" = "2 Minuten";
 "home.batterySaver.afk.5" = "5 Minuten";
 "home.batterySaver.afk.10" = "10 Minuten";

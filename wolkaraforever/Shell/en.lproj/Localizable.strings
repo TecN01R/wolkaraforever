@@ -124,12 +124,14 @@
 "home.batterySaver.options.note" = "These apply while Battery Saver Mode is on, and take effect the next time you start the game. The choices are remembered either way.";
 "batterySaver.selected" = "Selected";
 "home.batterySaver.frameLimit.title" = "Frame limit";
-"home.batterySaver.frameLimit.message" = "Automatic is 60 FPS on power and 30 FPS on battery. Low Power Mode lowers any cap to 30 FPS; device temperature never changes it. Applies the next time you start the game.";
+"home.batterySaver.frameLimit.message" = "Automatic is 60 FPS on power and 30 FPS on battery. 40 and 120 use the screen's 120 Hz: 40 stays smooth by showing every third refresh, and 120 removes the cap, so the phone runs hotter. Every other choice, and Battery Saver Mode off, keeps the game at 60 FPS or below. Low Power Mode lowers any choice to 30 FPS; device temperature never changes it. Applies the next time you start the game.";
 "home.batterySaver.afk.title" = "AFK saver";
 "home.batterySaver.afk.message" = "After this long without input, the screen dims and the game is held at 10 FPS. The first touch, key, mouse action or controller action only wakes it. Applies the next time you start the game.";
 "home.batterySaver.frame.automatic" = "Automatic";
 "home.batterySaver.frame.30" = "30 FPS";
+"home.batterySaver.frame.40" = "40 FPS";
 "home.batterySaver.frame.60" = "60 FPS";
+"home.batterySaver.frame.120" = "120 FPS (ProMotion)";
 "home.batterySaver.afk.2" = "2 minutes";
 "home.batterySaver.afk.5" = "5 minutes";
 "home.batterySaver.afk.10" = "10 minutes";

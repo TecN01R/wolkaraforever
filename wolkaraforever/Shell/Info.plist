@@ -37,5 +37,10 @@
 	<string>public.app-category.games</string>
 	<key>GCSupportsGameMode</key>
 	<true/>
+	<!-- Personal branch: lets the game be shown above 60 Hz on a ProMotion iPhone, for Battery
+	     Saver's 40 (every third refresh at 120 Hz) and 120 choices. Every other choice holds the
+	     game at 60 FPS (BatterySaverPolicy.h, AKBatterySaverFrameCeilingMake). -->
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 </dict>
 </plist>

@@ -1,0 +1,120 @@
+# WolkaraForever layer patch 0905 - Battery Saver 40 and 120: pacing and measurement (personal branch)
+#
+# Why: the owner of this branch wants to try a steady 40 FPS and ProMotion's 120 Hz on an
+# iPhone Duo. Without CADisableMinimumFrameDurationOnPhone iOS shows an iPhone app on a 60 Hz
+# rhythm, and the game's own 40 FPS cap was seen on the Duo alternating short and long frames.
+# This branch adds the opt-in to the app's Info.plist and two Battery Saver choices, 40 and
+# 120 (BatterySaverPolicy). Upstream keeps 60 Hz on purpose, for heat, so this is a personal
+# test, not an upstream candidate.
+#
+# What it changes in the Metal adapter:
+#   - The 60 FPS ceiling. With the opt-in present, a session is held at 60 FPS unless the
+#     player chose 120 with Battery Saver Mode on (AKBatterySaverLaunchFrameCeiling), so the
+#     presentation hook is installed for it even with Battery Saver Mode off. Without the
+#     opt-in the ceiling is 0 and nothing here changes.
+#   - Timed presentation under a cap. When the cap, not the game's own time, decides when a
+#     frame may appear, the frame is presented with a minimum duration instead of at a host
+#     time. A host time lands on whichever refresh follows it, so 25 ms targets on a 60 Hz
+#     rhythm alternate 16.7 and 33.3 ms; a minimum duration rounds up to whole refreshes - a
+#     steady 40 at 120 Hz, and a steady 30 when 120 Hz is not available. The simulator, which
+#     has no minimum-duration presentation, keeps the timed target.
+#   - Measurement. A 40 or 120 session records presented frames for its whole run (closing the
+#     HUD does not stop it) and counts how long each stayed on screen, in the refresh multiples
+#     a ProMotion iPhone can show. DisplayRate.m logs and clears the counts once a second.
+#
+# Applies after: 0904-large-phone-screen-holds-landscape.patch
+# Applies to: translation/Metal/Presentation.m
+# Upstream: no (personal branch).
+#
+--- a/translation/Metal/Presentation.m
++++ b/translation/Metal/Presentation.m
+@@ -25,12 +25,31 @@ static double s_cachedFPS = 0.0;
+ static double s_lastFrameDurationMs = 0.0;
+ static double s_lastPresentedAt = 0.0;
+ 
++// How long each presented frame stayed on screen, counted in the refresh multiples a
++// ProMotion iPhone can show: 8.3 ms (120 Hz), 12.5 (80), 16.7 (60), 20.8 (48), 25 (40),
++// 33.3 (30) and anything longer. The bin edges sit halfway between those values. A steady
++// 40 FPS is all "25"; 40 FPS on a 60 Hz rhythm alternates "17" and "33". Read and cleared
++// once a second by the display-rate log (DisplayRate.m) while a 40 or 120 test runs.
++#define AK_PRESENT_GAP_BINS 7
++static unsigned s_presentGapBins[AK_PRESENT_GAP_BINS];
++
++__attribute__((visibility("default"))) void AKMetalTakePresentedGapBins(unsigned out[AK_PRESENT_GAP_BINS]) {
++    os_unfair_lock_lock(&s_fpsLock);
++    for (int index = 0; index < AK_PRESENT_GAP_BINS; index++) { out[index] = s_presentGapBins[index]; s_presentGapBins[index] = 0; }
++    os_unfair_lock_unlock(&s_fpsLock);
++}
++
+ void AKRecordMetalFramePresented(double timestamp) {
+     if (timestamp <= 0.0) timestamp = CACurrentMediaTime();
+     os_unfair_lock_lock(&s_fpsLock);
+     if (s_lastPresentedAt > 0.0) {
+         double delta = timestamp - s_lastPresentedAt;
+-        if (delta > 0.0) s_lastFrameDurationMs = delta * 1000.0;
++        if (delta > 0.0) {
++            s_lastFrameDurationMs = delta * 1000.0;
++            double ms = s_lastFrameDurationMs;
++            int bin = ms < 10.42 ? 0 : ms < 14.58 ? 1 : ms < 18.75 ? 2 : ms < 22.92 ? 3 : ms < 29.17 ? 4 : ms < 37.5 ? 5 : 6;
++            s_presentGapBins[bin]++;
++        }
+     }
+     s_lastPresentedAt = timestamp;
+     s_fpsTimestamps[s_fpsHead] = timestamp;
+@@ -135,8 +154,11 @@ __attribute__((visibility("default"))) double AKMetalLastDrawableWaitMs(void) {
+ // swizzle is installed always but the work inside it is gated by this flag - the same shape as
+ // the readback opt-in below, and for the same reason.
+ static atomic_bool s_recordFrames = false;
++// A Battery Saver 40 or 120 session records presented frames for its whole run, so the
++// display-rate log can say how long frames really stayed up: closing the HUD must not stop it.
++static atomic_bool s_rateTest = false;
+ __attribute__((visibility("default"))) void AKEnableMetalFrameStatistics(void) { atomic_store(&s_recordFrames, true); }
+-__attribute__((visibility("default"))) void AKDisableMetalFrameStatistics(void) { atomic_store(&s_recordFrames, false); }
++__attribute__((visibility("default"))) void AKDisableMetalFrameStatistics(void) { if (!atomic_load(&s_rateTest)) atomic_store(&s_recordFrames, false); }
+ 
+ // Battery Saver: a frame cap applied at the presentation call the guest itself makes.
+ //
+@@ -453,7 +475,14 @@ static void observedPresentAt(id command,SEL selector,id<MTLDrawable> drawable,C
+     // atTime: is the guest's own timing, so it is preserved: the frame is presented no
+     // earlier than the cap allows, and never earlier than the guest asked for.
+     CFTimeInterval target=AKBatterySaverPaceTarget(drawable,interval);
+-    if(target>time) { atomic_fetch_add(&s_paceRaised,1); originalPresentAt(command,selector,drawable,target); }
++    // When the cap is what decides, hold the previous frame for the interval instead of
++    // naming a host time. A time lands on whichever refresh follows it, so 25 ms targets on a
++    // 60 Hz rhythm alternate 16.7 and 33.3 ms; a minimum duration rounds up to whole
++    // refreshes and gives a steady 30 there and a steady 40 at 120 Hz. The guest's own later
++    // time is still kept below. Without minimum-duration presentation (the simulator), the
++    // timed target as before.
++    if(target>time && originalPresentAfter) { atomic_fetch_add(&s_paceRaised,1); originalPresentAfter(command,@selector(presentDrawable:afterMinimumDuration:),drawable,interval); }
++    else if(target>time) { atomic_fetch_add(&s_paceRaised,1); originalPresentAt(command,selector,drawable,target); }
+     else { atomic_fetch_add(&s_paceKept,1); AKBatterySaverRecordPace(drawable,time); originalPresentAt(command,selector,drawable,time); }
+ }
+ static void observedPresentAfter(id command,SEL selector,id<MTLDrawable> drawable,CFTimeInterval time) {
+@@ -545,10 +574,14 @@ void AKInstallMetalPresentationDiagnostics(id<MTLDevice> device) {
+     BOOL hud=[layout isKindOfClass:NSDictionary.class] && [layout[@"performanceOverlayEnabled"] boolValue];
+     // Battery Saver. The choice was snapshotted by the launcher before this guest started,
+     // so a submenu change cannot alter the session that is playing.
+-    BOOL pacing=AKBatterySaverLaunchEnabled() && (AKBatterySaverLaunchFrameLimit()!=AKBatterySaverFrameLimitOff ||
+-                                                AKBatterySaverLaunchAFKMinutes()>0);
++    BOOL pacing=(AKBatterySaverLaunchEnabled() && (AKBatterySaverLaunchFrameLimit()!=AKBatterySaverFrameLimitOff ||
++                                                 AKBatterySaverLaunchAFKMinutes()>0)) ||
++                AKBatterySaverLaunchFrameCeiling()>0.0;   // the 60 FPS ceiling of a 120 Hz-capable app
++    // A 40 or 120 session is a refresh-rate test: it records presented frames throughout.
++    BOOL rateTest=AKBatterySaverLaunchEnabled() && (AKBatterySaverLaunchFrameLimit()==AKBatterySaverFrameLimit40 ||
++                                                    AKBatterySaverLaunchFrameLimit()==AKBatterySaverFrameLimit120);
+     // Nothing to observe or pace in ordinary play: no presentation hook is installed at all.
+-    if(!sample && !measure && !hud && !pacing) return;
++    if(!sample && !measure && !hud && !pacing && !rateTest) return;
+     static dispatch_once_t once;
+     dispatch_once(&once,^{
+         captureFrames=sample; measureFrames=measure;
+@@ -556,6 +589,9 @@ void AKInstallMetalPresentationDiagnostics(id<MTLDevice> device) {
+             atomic_store(&s_paceWanted,true);
+             AKBatterySaverObserveDim();
+         }
++        if(rateTest) { atomic_store(&s_rateTest,true); atomic_store(&s_recordFrames,true); }
++        AKLog(@"battery saver: presentation pacing=%d ceiling=%.0f rate test=%d (120 Hz opt-in %d)",
++              pacing,AKBatterySaverLaunchFrameCeiling(),rateTest,AKBatterySaverHighRefreshAllowed());
+         // --measure-native wants the same per-frame statistics the HUD asks for,
+         // so it turns the gate on itself rather than relying on a HUD nobody opened.
+         if(measure) atomic_store(&s_recordFrames,true);

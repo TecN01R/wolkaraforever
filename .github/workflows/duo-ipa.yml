@@ -108,6 +108,17 @@ jobs:
           xcrun clang -fobjc-arc build/forever-ui/*.o -framework Foundation -o build/forever-ui/test_forever_config
           build/forever-ui/test_forever_config
 
+      # Battery Saver's frame rule, including the personal branch's 40, 120 and 60 FPS
+      # ceiling: the policy half of wolkaraforever/tools/test_battery_saver.sh. Foundation only.
+      - name: Battery Saver policy tests
+        run: |
+          cd build/platform && mkdir -p build/battery-saver
+          xcrun clang -fobjc-arc -Wall -Wextra -Werror -O1 -g \
+            -fsanitize=address,undefined -fno-omit-frame-pointer -framework Foundation \
+            launcher/WoW/BatterySaverPolicy.m tests/test_battery_saver_policy.m \
+            -o build/battery-saver/test_battery_saver_policy
+          build/battery-saver/test_battery_saver_policy
+
       - name: Checksum
         run: |
           shasum -a 256 "$IPA" | tee "$IPA.sha256"
