@@ -1,0 +1,112 @@
+# WolkaraForever layer patch 0904 - on a large phone screen the game stays in landscape
+#
+# Why: the iPhone's Info.plist orientations are landscape only, but on the iPhone Duo's inner
+# screen (951 x 669 points) iOS treats the app as resizable and turns it to portrait anyway: a
+# device log shows "window content size -> 669x951" unfolded. From iOS 27 the declared
+# orientations are a preference and UIRequiresFullScreen no longer opts out of resizing
+# (Apple's TN3192, "Migrating your app from the deprecated UIRequiresFullScreen key"). The game
+# is played in landscape, and its owner asked for the unfolded screen to stay there.
+#
+# Now the guest's view controller, on a phone screen at least 600 points on its shorter side
+# (the Duo's inner screen; its cover is 466 and no other iPhone passes 440):
+#   - supports landscape only;
+#   - when it appears or after a size change finds that screen in portrait, asks the scene for
+#     landscape (requestGeometryUpdateWithPreferences:);
+#   - once in landscape, asks iOS to hold the orientation while the game is visible
+#     (prefersInterfaceOrientationLocked, iOS 26), and lets go again on the cover screen.
+# iOS does not promise to honour either request; a refusal is logged. The lock keeps the
+# landscape side the game is on: turning the phone over does not flip it while it holds.
+# The cover screen, every other iPhone and every iPad keep the behaviour they had.
+#
+# Applies after: 0903-guest-display-before-first-window-is-the-apps-screen.patch
+# Applies to: translation/AppKit/AppKit.m, translation/AppKit/AKLargeScreenOrientation.h (new)
+# Upstream: candidate, once confirmed on a device.
+#
+diff --git a/translation/AppKit/AKLargeScreenOrientation.h b/translation/AppKit/AKLargeScreenOrientation.h
+new file mode 100644
+index 0000000..566bdb1
+--- /dev/null
++++ b/translation/AppKit/AKLargeScreenOrientation.h
+@@ -0,0 +1,48 @@
++// The guest's window on a large phone screen stays in landscape.
++//
++// The iPhone Duo's inner screen is 951 x 669 points: wide enough that iOS treats the app as
++// resizable there and lets it turn to portrait, whatever the iPhone's Info.plist orientations
++// say (from iOS 27 they are a preference, and UIRequiresFullScreen no longer opts out; Apple's
++// TN3192). The game is played in landscape, so on that screen the guest's view controller asks
++// for landscape, and once it is there asks iOS to hold the orientation while the game is visible
++// (prefersInterfaceOrientationLocked, iOS 26). iOS does not promise to honour either request; a
++// refusal is logged. Every other screen - the Duo's cover, every other iPhone, every iPad -
++// keeps the orientation behaviour it had.
++#pragma once
++#import <UIKit/UIKit.h>
++#import "AKSupport.h"
++
++// A phone screen at least 600 points on its shorter side: the Duo's inner screen (669). The
++// cover is 466 and no other iPhone passes 440, so this names that one screen without naming a
++// model. The scene's own coordinate space, not its UIScreen's bounds: on the Duo the two
++// disagree (see AKGuestDisplayFallback.h).
++static inline BOOL AKGuestIsOnLargePhoneScreen(UIViewController *controller) {
++    if (UIDevice.currentDevice.userInterfaceIdiom != UIUserInterfaceIdiomPhone) return NO;
++    UIWindowScene *scene = controller.view.window.windowScene;
++    if (!scene) return NO;
++    CGSize size = scene.coordinateSpace.bounds.size;
++    return MIN(size.width, size.height) >= 600;
++}
++
++static inline BOOL AKGuestIsInLandscape(UIViewController *controller) {
++    UIWindowScene *scene = controller.view.window.windowScene;
++    return scene && UIInterfaceOrientationIsLandscape(scene.effectiveGeometry.interfaceOrientation);
++}
++
++// Called when the guest's view appears and after every size change (a fold, an unfold, a turn):
++// asks for landscape while the large screen is in portrait, then has iOS read the orientation
++// preferences again, which locks them once landscape is reached and unlocks them on the cover.
++static inline void AKGuestHoldLandscapeOnLargeScreen(UIViewController *controller) {
++    UIWindowScene *scene = controller.view.window.windowScene;
++    if (!scene) return;
++    if (AKGuestIsOnLargePhoneScreen(controller) && !AKGuestIsInLandscape(controller)) {
++        AKLog(@"orientation: the large screen is in portrait; asking for landscape");
++        UIWindowSceneGeometryPreferencesIOS *landscape =
++            [[UIWindowSceneGeometryPreferencesIOS alloc] initWithInterfaceOrientations:UIInterfaceOrientationMaskLandscape];
++        [scene requestGeometryUpdateWithPreferences:landscape errorHandler:^(NSError *error) {
++            AKLog(@"orientation: landscape was refused: %@", error.localizedDescription);
++        }];
++    }
++    [controller setNeedsUpdateOfSupportedInterfaceOrientations];
++    if (@available(iOS 26.0, *)) [controller setNeedsUpdateOfPrefersInterfaceOrientationLocked];
++}
+diff --git a/translation/AppKit/AppKit.m b/translation/AppKit/AppKit.m
+index e1f4053..d956b07 100644
+--- a/translation/AppKit/AppKit.m
++++ b/translation/AppKit/AppKit.m
+@@ -7,6 +7,7 @@
+ #import "TouchGamepadLayout.h"
+ #import "InterfaceMode.h"
+ #import "AKGuestDisplayFallback.h"
++#import "AKLargeScreenOrientation.h"
+ 
+ // The guest screen's pixels per point, defined in Screens.m.
+ CGFloat AKGuestBackingScale(void);
+@@ -972,7 +973,20 @@ static BOOL AKIsFinger(NSSet<UITouch *> *t) { return t.anyObject.type == UITouch
+ - (UIRectEdge)preferredScreenEdgesDeferringSystemGestures { return UIRectEdgeAll; }
+ - (BOOL)prefersHomeIndicatorAutoHidden { return YES; }
+ - (BOOL)prefersPointerLocked { return AKMouseIsCaptured() && GCMouse.mice.count>0; }
+-- (void)viewDidAppear:(BOOL)a { [super viewDidAppear:a]; [self.view becomeFirstResponder]; }
++- (void)viewDidAppear:(BOOL)a { [super viewDidAppear:a]; [self.view becomeFirstResponder]; AKGuestHoldLandscapeOnLargeScreen(self); }
++// Landscape, held, on a large phone screen (the iPhone Duo unfolded); as before everywhere else.
++- (UIInterfaceOrientationMask)supportedInterfaceOrientations {
++    return AKGuestIsOnLargePhoneScreen(self) ? UIInterfaceOrientationMaskLandscape : [super supportedInterfaceOrientations];
++}
++- (BOOL)prefersInterfaceOrientationLocked { return AKGuestIsOnLargePhoneScreen(self) && AKGuestIsInLandscape(self); }
++- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
++    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
++    __weak UIViewController *weakSelf = self;
++    [coordinator animateAlongsideTransition:nil completion:^(__unused id<UIViewControllerTransitionCoordinatorContext> context) {
++        UIViewController *controller = weakSelf;
++        if (controller) AKGuestHoldLandscapeOnLargeScreen(controller);
++    }];
++}
+ @end
+ 
+ #pragma mark - NSWindow

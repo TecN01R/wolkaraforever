@@ -14,6 +14,13 @@ correctness.
 
 ### Added
 
+- **Unfolded, the game stays in landscape** (patch 0904). On the Duo's inner screen iOS treated
+  the app as resizable and turned it to portrait, despite the iPhone's landscape-only setting
+  (from iOS 27 that setting is a preference). On a phone screen at least 600 points on its
+  shorter side, which is only the Duo's inner screen, the game now asks for landscape and then
+  asks iOS to hold it while the game is visible. The cover screen keeps turning as before. iOS
+  does not promise to honour the request. *Not yet tested on the Duo.*
+
 - **Reset WoW Settings on This Device** (first named Reset All WoW Settings). A UI Manager button
   beside the graphics reset. It empties the
   game's `Config.wtf` except region, language, account name, the Battle.net agent's id, Gamepad
@@ -112,5 +119,5 @@ correctness.
 
 ### Changed
 
-- The fork's own patches are numbered `09xx` (0901, 0902, and 0903 from 2026-11-26), apart from
+- The fork's own patches are numbered `09xx` (0901, 0902, and 0903-0904 from 2026-11-26), apart from
   upstream's sequence.

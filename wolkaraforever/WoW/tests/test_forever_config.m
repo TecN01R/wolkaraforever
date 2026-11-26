@@ -36,7 +36,7 @@ int main(void) {
              "SET textLocale \"enUS\"\n"
              "SET audioLocale \"enUS\"\n"
              "SET accountName \"TESTACCOUNT\"\n"
-             "SET gxResolution \"1920x1080\"\n"
+             "SET gxWindowedResolution \"1920x1080\"\n"
              "SET graphicsQuality \"7\"\n"
              "SET Sound_OutputDriverIndex \"0\"\n"
              "SET GamePadEnable \"1\"\n"
@@ -70,7 +70,7 @@ int main(void) {
         // --- CRLF endings survive, and only the graphics lines go
         NSString *crlf =
             @"SET portal \"us\"\r\n"
-             "SET gxRefresh \"60\"\r\n"
+             "SET maxFPS \"60\"\r\n"
              "SET accountName \"ACC\"\r\n";
         Write(ConfigPath(root), crlf);
         assert([TKForeverUI resetGraphicsInWorkingDirectory:root error:&error]);

@@ -1848,7 +1848,7 @@ static void TestIPadM5RenderProfile(void) {
          "SET textLocale \"enUS\"\n"
          "SET audioLocale \"enUS\"\n"
          "SET accountName \"TESTACCOUNT\"\n"
-         "SET gxResolution \"1920x1080\"\n"
+         "SET gxWindowedResolution \"1920x1080\"\n"
          "SET graphicsQuality \"7\"\n"
          "SET Sound_OutputDriverIndex \"0\"\n"
          "SET GamePadEnable \"0\"\n"
@@ -2303,7 +2303,7 @@ static int backupsBeforePerformance;
     assert(stubBackups == 2);   // the reset made its own rollback point
     [self dismissPresented];
     NSString *config = [self configText];
-    assert(![config containsString:@"SET gxResolution"]);
+    assert(![config containsString:@"SET gxWindowedResolution"]);
     assert(![config containsString:@"SET graphicsQuality"]);
     for (NSString *kept in @[@"SET portal \"eu\"", @"SET textLocale \"enUS\"", @"SET audioLocale \"enUS\"",
                              @"SET accountName \"TESTACCOUNT\"", @"SET Sound_OutputDriverIndex \"0\"",
