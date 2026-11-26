@@ -1942,7 +1942,8 @@ static void TestIPadM5RenderProfile(void) {
                               @"wow.performance.batterySaver"],
         @"wow.box.performance": @[@"wow.heading.performance", @"wow.performance.gamepad",
                                   @"wow.performance.backup", @"wow.performance.restore",
-                                  @"wow.performance.reset", @"wow.performance.settingsFolder"],
+                                  @"wow.performance.reset", @"wow.performance.resetAll",
+                                  @"wow.performance.settingsFolder"],
         // The sixth card: the interface this launcher drives, and the arrangement its controls
         // use. Two settings, two rows.
         @"wow.box.launcherManager": @[@"wow.heading.launcherManager", @"wow.launcher.interfaceMode",

@@ -93,6 +93,17 @@ inWorkingDirectory:(NSString *)directory
 // removes without reading a Config.wtf. Names are compared case-insensitively.
 FOUNDATION_EXPORT NSSet<NSString *> *TKForeverUIGraphicsCVars(void);
 
+// Removes every CVar from Config.wtf except TKForeverUIKeptCVars() and the cache
+// bookkeeping (CACHE-*), so the client starts with its own defaults for graphics,
+// sound, interface, camera and controls - and with its hardware detection marker
+// (hwDetect) gone. Lines that are not `SET` lines are kept. Only Config.wtf is
+// touched: account and character folders, bindings, macros and add-ons are not.
++ (BOOL)resetAllSettingsInWorkingDirectory:(NSString *)directory error:(NSError **)error;
+
+// What a full reset keeps, lower-case: where and as whom the game starts (portal,
+// locale, account, the Battle.net agent's id) and the launcher's GamePadEnable.
+FOUNDATION_EXPORT NSSet<NSString *> *TKForeverUIKeptCVars(void);
+
 // The Forever installation's WTF directory. Creates it only when asked, and
 // only inside the working directory. Nil when the path cannot be resolved.
 + (nullable NSString *)wtfDirectoryInWorkingDirectory:(NSString *)directory

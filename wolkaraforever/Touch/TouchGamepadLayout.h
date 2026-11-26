@@ -67,6 +67,10 @@ typedef NS_ENUM(NSInteger, AKGamepadLayoutMode) {
 // Off by default and a mobile-interface arrangement only, so Standard and every existing
 // mobile layout keep the fixed rings they have.
 @property(nonatomic) BOOL floatingSticks;
+// With sticks only, the camera stick is not drawn: a round Jump button takes its place, and
+// the camera is turned by dragging on the game itself. Off by default, and like sticksOnly a
+// mobile-interface arrangement only.
+@property(nonatomic) BOOL jumpReplacesCameraStick;
 // Areas the app leaves alone while the floating arrangement is on: normalised rectangles in
 // the overlay's own space, where a touch goes to the game - or to an add-on's own buttons -
 // instead of to a stick. Empty by default, and saved with the rest of the layout: nothing is

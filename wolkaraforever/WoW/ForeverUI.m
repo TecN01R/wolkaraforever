@@ -400,6 +400,48 @@ inWorkingDirectory:(NSString *)directory
     return TKWriteConfig(path, reset, error);
 }
 
+NSSet<NSString *> *TKForeverUIKeptCVars(void) {
+    static NSSet<NSString *> *set;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        set = [NSSet setWithArray:@[
+            @"portal", @"textlocale", @"audiolocale",      // region and language
+            @"accountname", @"accountlist", @"agentuid",  // who signs in, through which agent
+            @"gamepadenable",                             // the launcher re-applies it anyway
+        ]];
+    });
+    return set;
+}
+
+// The opposite rule to the graphics reset: an explicit list of what stays, and
+// everything else goes. CACHE-* lines describe the Cache folder, which this does
+// not empty, so they stay with it.
+static BOOL TKKeptOnFullReset(NSString *name) {
+    return [TKForeverUIKeptCVars() containsObject:name.lowercaseString] ||
+           [name.uppercaseString hasPrefix:@"CACHE-"];
+}
+
++ (BOOL)resetAllSettingsInWorkingDirectory:(NSString *)directory error:(NSError **)error {
+    NSString *wtf = [self wtfDirectoryInWorkingDirectory:directory create:NO error:error];
+    if (!wtf) return NO;
+    NSString *path = [wtf stringByAppendingPathComponent:@"Config.wtf"];
+    if (!TKInside(directory, path)) {
+        if (error) *error = TKError(WKLocalized(@"forever.error.configOutside"));
+        return NO;
+    }
+    if (![NSFileManager.defaultManager fileExistsAtPath:path]) return YES;   // nothing to reset
+    NSString *text = TKReadConfig(path, error);
+    if (!text) return NO;
+    NSMutableArray<NSString *> *kept = [NSMutableArray new];
+    for (NSString *line in [text componentsSeparatedByString:@"\n"]) {
+        NSString *name = TKCVarName(line);
+        if (!name || TKKeptOnFullReset(name)) [kept addObject:line];
+    }
+    NSString *reset = [kept componentsJoinedByString:@"\n"];
+    if ([reset isEqualToString:text]) return YES;
+    return TKWriteConfig(path, reset, error);
+}
+
 #pragma mark - Archive bridge
 
 static Class TKArchiveClass(NSError **error) {
