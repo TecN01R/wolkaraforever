@@ -18,7 +18,8 @@ correctness.
   game's `Config.wtf` except region, language, account name, the Battle.net agent's id, Gamepad
   UI and the cache bookkeeping, after the usual backup, so every client setting returns to the
   game's own defaults and its hardware detection runs again. Key bindings, macros, add-ons and
-  their settings are kept. *Not yet tested on a device.*
+  their settings are kept. Tested on the Duo: the game came back at graphics level 4 with
+  Render Scale 50%, its own choice for the unfolded screen (raise Render Scale again to taste).
 - **Jump instead of camera stick.** A switch in the in-game touch controls, under **Sticks and
   jump only**, shown only while that is on. With it on, the camera stick is not drawn, a round
   Jump button the size of the stick itself sits where it was, and the camera turns by dragging
