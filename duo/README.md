@@ -33,9 +33,6 @@ and when, is in [CHANGELOG.md](CHANGELOG.md).
   turns. *Not yet tested on the Duo.*
 - **iOS on Duo touch.** Patch 0901 makes direct touch follow the interface mode, so it also works
   with **iOS on Duo**.
-- **Stay signed in.** The experimental Battle.net login can keep its web session between app
-  launches (opt-in, in the login sheet; upstream keeps it in memory only). *Not yet tested on a
-  device.*
 - **Reset Positions.** Beside **Done editing** in the in-game layout editor: every control of the
   arrangement being edited goes back to its default place. *Confirmed on the Duo.*
 - **Render profile.** On the iPhone Duo, **Quality** renders at the inner screen's native scale, so

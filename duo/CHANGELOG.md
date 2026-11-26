@@ -29,9 +29,12 @@ correctness.
 ### Moved
 
 - **To the owner's `personal` branch:** *Reset WoW Settings on This Device* (a reset of the game's
-  whole `Config.wtf`, first named Reset All WoW Settings) and *Jump instead of camera stick*. Both
-  work on the Duo; they are one player's preferences rather than what this fork is for, so they
-  are not in its releases.
+  whole `Config.wtf`, first named Reset All WoW Settings), *Jump instead of camera stick* and
+  *Stay signed in* (the experimental Battle.net login's opt-in to keep its web session between
+  launches). They are one player's preferences rather than what this fork is for, so they are not
+  in its releases. Stay signed in also went against upstream's rule that the sign-in session is
+  never kept, so the first launch of a release without it removes any session an earlier build
+  kept on the device.
 
 ### Fixed
 

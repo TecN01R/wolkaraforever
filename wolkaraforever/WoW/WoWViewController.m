@@ -1353,16 +1353,6 @@ static dispatch_queue_t TKForeverUIQueue(void) {
         if (message) [self presentMessage:WKLocalized(@"login.cleared.title") message:WKLocalized(@"login.cleared.message")];
     }];
 }
-// Fork: the opt-in asks first, because it changes what is kept on the device.
-- (void)confirmStaySignedIn {
-    UIAlertController *warning=[UIAlertController alertControllerWithTitle:WKLocalized(@"login.stay.confirm.title")
-        message:WKLocalized(@"login.stay.confirm.message") preferredStyle:UIAlertControllerStyleAlert];
-    [warning addAction:[UIAlertAction actionWithTitle:WKLocalized(@"common.cancel") style:UIAlertActionStyleCancel handler:nil]];
-    [warning addAction:[UIAlertAction actionWithTitle:WKLocalized(@"login.stay.confirm.yes") style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        [TKBattleNetBrowser setStaysSignedIn:YES completion:nil];
-    }]];
-    [self presentSheet:warning anchor:_browserLoginButton];
-}
 - (void)enableBrowserLogin {
     UIAlertController *warning=[UIAlertController alertControllerWithTitle:WKLocalized(@"login.enable.title")
         message:WKLocalized(@"login.enable.message") preferredStyle:UIAlertControllerStyleAlert];
@@ -1408,22 +1398,8 @@ static dispatch_queue_t TKForeverUIQueue(void) {
         }]];
     }
     if (enabled) {
-        // Fork: keep Battle.net's web session between app launches, or stop keeping it.
-        if ([TKBattleNetBrowser canStaySignedIn]) {
-            BOOL stays=[TKBattleNetBrowser staysSignedIn];
-            [sheet addAction:[UIAlertAction actionWithTitle:WKLocalized(stays ? @"login.stay.off" : @"login.stay.on")
-                style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-                if (stays) {
-                    [TKBattleNetBrowser setStaysSignedIn:NO completion:^{
-                        [self presentMessage:WKLocalized(@"login.stay.stopped.title")
-                                     message:WKLocalized(@"login.stay.stopped.message")];
-                    }];
-                } else [self confirmStaySignedIn];
-            }]];
-        }
         [sheet addAction:[UIAlertAction actionWithTitle:WKLocalized(@"login.disable") style:UIAlertActionStyleDestructive handler:^(__unused UIAlertAction *action) {
             [NSUserDefaults.standardUserDefaults setBool:NO forKey:@"WoWBrowserLogin"];
-            [NSUserDefaults.standardUserDefaults setBool:NO forKey:@"WoWBrowserLoginStaySignedIn"];
             WKLog("battle-login", @"experimental login disabled");
             // The password was kept for this feature; it goes with it.
             [TKBattleNetSavedPassword forget];

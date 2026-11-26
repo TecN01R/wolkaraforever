@@ -881,13 +881,6 @@
 "login.cleared.message" = "The in-memory browser session, any pending launch ticket and the saved password were removed.";
 "login.failed" = "Sign-in did not finish. Cancel and try again.";
 /* Fork: stay signed in between app launches */
-"login.stay.on" = "Stay signed in on this device";
-"login.stay.off" = "Stop staying signed in";
-"login.stay.confirm.title" = "Stay signed in on this device?";
-"login.stay.confirm.message" = "Battle.net's web session is then kept on this device between app launches, so signing in needs no typing next time. Tick \"Keep me logged in\" on Battle.net's page. While it is kept, anyone who can open this app on your unlocked device can start the game on your account. Turning this off, disabling experimental login or Clear sign-in data removes it.";
-"login.stay.confirm.yes" = "Stay signed in";
-"login.stay.stopped.title" = "No longer staying signed in";
-"login.stay.stopped.message" = "The Battle.net session kept on this device was removed. Signing in is asked for again after the app restarts.";
 
 /* ---- Saved game password, experimental Battle.net login ---- */
 "login.status.onSaved" = "On · password saved";
