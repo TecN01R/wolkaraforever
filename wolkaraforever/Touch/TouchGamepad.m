@@ -57,6 +57,15 @@ CGPoint AKTouchGamepadStickPosition(CGPoint point, CGSize size) {
     [self sendActionsForControlEvents:UIControlEventValueChanged];
 }
 - (void)setSector:(NSInteger)sector {
+    if (sector < 0) {
+        // Back to a plain button (the round jump that replaces the camera stick): no wedge,
+        // the button's own fill and border again.
+        _sector = -1; _sectorPath = nil; _sectorLayer.path = NULL;
+        self.backgroundColor = _pressed ? [UIColor colorWithRed:0.1 green:0.55 blue:0.65 alpha:0.8]
+                                        : [UIColor colorWithWhite:0.13 alpha:0.64];
+        self.layer.borderWidth = 1; [self setNeedsLayout];
+        return;
+    }
     _sector = sector; self.backgroundColor = UIColor.clearColor; self.layer.borderWidth = 0;
     if (!_sectorLayer) { _sectorLayer = [CAShapeLayer layer]; [self.layer insertSublayer:_sectorLayer atIndex:0]; }
     _sectorLayer.fillColor = [UIColor colorWithWhite:0.13 alpha:0.64].CGColor;
@@ -283,7 +292,7 @@ static const CGFloat AKFloatRightMinX = 0.64, AKFloatRightMinY = 0.25, AKFloatRi
     UIView *_settings;
     UIButton *_editDone;
     UILabel *_hint;
-    UISwitch *_editSwitch, *_hapticsSwitch, *_overlaySwitch, *_swapShouldersSwitch, *_sticksOnlySwitch;
+    UISwitch *_editSwitch, *_hapticsSwitch, *_overlaySwitch, *_swapShouldersSwitch, *_sticksOnlySwitch, *_jumpOnlySwitch;
     UISwitch *_floatingSwitch, *_simpleSwitch, *_stickButtonsSwitch;
     UIButton *_addZoneButton, *_clearZoneButton;
     // The ability zones on screen, in the order the layout lists them.
@@ -685,6 +694,9 @@ static const CGFloat AKFloatRightMinX = 0.64, AKFloatRightMinY = 0.25, AKFloatRi
         zone.enabled = !self.configuring || _editing;
     }
     _leftStick.enabled = _rightStick.enabled = !self.configuring;
+    BOOL jumpOnly = [self jumpReplacesCameraStick];
+    if (jumpOnly && _rightStick.held) [_rightStick cancelTrackingWithEvent:nil];
+    _rightStick.hidden = jumpOnly;
     _editDone.hidden = _hint.hidden = !_editing;
     _editGrid.hidden = _editAxes.hidden = !_editing;
     BOOL floating = [self floatingActive];
@@ -706,6 +718,13 @@ static const CGFloat AKFloatRightMinX = 0.64, AKFloatRightMinY = 0.25, AKFloatRi
 - (BOOL)floatingActive {
     return AKInterfaceModeIsMobile() && _preferences.floatingSticks && _preferences.sticksOnly &&
         _controlsVisible && !self.configuring;
+}
+// Jump in place of the camera stick: sticks only, a mobile interface, the player asked, and not
+// while the layout is being edited (the editor shows and moves the ring as it always has). The
+// camera is then the game's own direct-touch drag, which a touch nothing here claims reaches.
+- (BOOL)jumpReplacesCameraStick {
+    return AKInterfaceModeIsMobile() && _preferences.sticksOnly && _preferences.jumpReplacesCameraStick &&
+        !self.configuring;
 }
 - (void)showAutoRun:(NSInteger)stage {
     UIView *ring = _items[@"left"];
@@ -738,6 +757,7 @@ static const CGFloat AKFloatRightMinX = 0.64, AKFloatRightMinY = 0.25, AKFloatRi
     if ([self floatingActive]) return [self floatingHit:point event:event];
     UIView *hit = [super hitTest:point withEvent:event];
     if (self.configuring) return hit; // Editing/settings must never click the game.
+    if (hit == _items[@"right"] && [self jumpReplacesCameraStick]) return nil;
     if (hit == self || hit == _items[@"left"] || hit == _items[@"right"]) {
         AKGamepadButton *jump = [self jumpAround:point event:event];
         return jump;
@@ -782,7 +802,7 @@ static const CGFloat AKFloatRightMinX = 0.64, AKFloatRightMinY = 0.25, AKFloatRi
     }
     if (fx <= AKFloatLeftMaxX && (fy >= AKFloatLeftLowY || (fx >= AKFloatLeftMinX && fy >= AKFloatLeftMinY)))
         return [self stickHeld:_leftStick event:event] ? _sink : _leftStick;
-    if (fx >= AKFloatRightMinX && fy >= AKFloatRightMinY && fy <= AKFloatRightMaxY)
+    if (fx >= AKFloatRightMinX && fy >= AKFloatRightMinY && fy <= AKFloatRightMaxY && ![self jumpReplacesCameraStick])
         return [self stickHeld:_rightStick event:event] ? _sink : _rightStick;
     return nil;
 }
@@ -795,6 +815,7 @@ static const CGFloat AKFloatRightMinX = 0.64, AKFloatRightMinY = 0.25, AKFloatRi
 static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachAngle = M_PI / 3;
 - (AKGamepadButton *)jumpAround:(CGPoint)point event:(UIEvent *)event {
     if (!AKInterfaceModeIsMobile() || !_preferences.sticksOnly || self.configuring) return nil;
+    if ([self jumpReplacesCameraStick]) return nil;   // the round jump is large enough on its own
     AKGamepadButton *jump = _jumpButton;
     UIView *ring = _items[@"right"];
     if (!jump || jump.hidden || !jump.enabled || !ring || ring.hidden) return nil;
@@ -851,11 +872,27 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
     _leftStick.frame = _rightStick.frame = CGRectMake(56,56,104,104);
     NSArray *leftNames = @[@"dpad.up",@"dpad.right",@"dpad.down",@"dpad.left"];
     NSArray *rightNames = @[GCInputButtonY,GCInputButtonB,GCInputButtonA,GCInputButtonX];
+    // Jump in place of the camera stick, in the fixed arrangement: A leaves its wedge and becomes
+    // one round button over the stick's own place, a little larger than the stick so a thumb
+    // that does not look still finds it. The floating arrangement keeps its corner jump.
+    AKGamepadButton *jump = _jumpButton;
+    BOOL roundJump = [self jumpReplacesCameraStick] && !floating;
     for (NSUInteger i=0; i<4; i++) {
         AKGamepadButton *a = _slots[leftNames[i]], *b = _slots[rightNames[i]];
         if (a.sector != (NSInteger)i) a.sector = i;
+        a.frame = CGRectMake(0,0,216,216);
+        if (roundJump && b == jump) continue;
         if (b.sector != (NSInteger)i) b.sector = i;
-        a.frame = b.frame = CGRectMake(0,0,216,216);
+        b.frame = CGRectMake(0,0,216,216);
+    }
+    if (roundJump) {
+        if (jump.sector >= 0) jump.sector = -1;
+        jump.frame = CGRectMake(38,38,140,140); jump.layer.cornerRadius = 70;
+        jump.titleLabel.font = [UIFont systemFontOfSize:22 weight:UIFontWeightSemibold];
+    } else if (jump.layer.cornerRadius != 22) {
+        // The loop above already gave A its wedge back; this undoes the rest of the round look.
+        jump.layer.cornerRadius = 22;
+        jump.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
     }
     if (_preferences.mode == AKGamepadLayoutModeSimple) {
         // Simple draws no triggers, so its two shoulders take the far corners - where an index
@@ -1044,6 +1081,17 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
         sticksRow.axis = UILayoutConstraintAxisHorizontal; sticksRow.alignment = UIStackViewAlignmentCenter;
         [self fitSettingsRow:sticksRow];
         [options addArrangedSubview:sticksRow];
+        // Only meaningful with sticks only, so greyed without it (a row that vanished would move
+        // every row under it).
+        _jumpOnlySwitch = [UISwitch new]; _jumpOnlySwitch.on = _preferences.jumpReplacesCameraStick;
+        _jumpOnlySwitch.enabled = _preferences.sticksOnly;
+        _jumpOnlySwitch.accessibilityLabel = AKHostLocalized(@"touch.settings.jumpReplacesCameraStick");
+        _jumpOnlySwitch.accessibilityIdentifier = @"wolkaraforever.controls.jumpReplacesCameraStick";
+        [_jumpOnlySwitch addTarget:self action:@selector(jumpOnlyChanged:) forControlEvents:UIControlEventValueChanged];
+        UIStackView *jumpRow = [[UIStackView alloc] initWithArrangedSubviews:@[[self label:AKHostLocalized(@"touch.settings.jumpReplacesCameraStick")],_jumpOnlySwitch]];
+        jumpRow.axis = UILayoutConstraintAxisHorizontal; jumpRow.alignment = UIStackViewAlignmentCenter;
+        [self fitSettingsRow:jumpRow];
+        [options addArrangedSubview:jumpRow];
         // The floating arrangement belongs to the same interface, so its switch is here too.
         _floatingSwitch = [UISwitch new]; _floatingSwitch.on = _preferences.floatingSticks;
         _floatingSwitch.accessibilityLabel = AKHostLocalized(@"touch.settings.floatingSticks");
@@ -1168,6 +1216,12 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
 }
 - (void)sticksOnlyChanged:(UISwitch *)sender {
     [self reset]; _preferences.sticksOnly = sender.on; [_preferences save];
+    _jumpOnlySwitch.enabled = sender.on;
+    [self updateAppearance];
+}
+- (void)jumpOnlyChanged:(UISwitch *)sender {
+    [self reset]; _preferences.jumpReplacesCameraStick = sender.on; [_preferences save];
+    AKGamepadLog(@"touch gamepad: jump instead of camera stick %@", sender.on ? @"on" : @"off");
     [self updateAppearance];
 }
 - (void)floatingChanged:(UISwitch *)sender {
@@ -1185,7 +1239,7 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
 - (void)beginEditing:(UISwitch *)sender {
     if (!sender.on) return;
     [self reset]; _editing = YES; [_settings removeFromSuperview]; _settings = nil;
-    _sliders = nil; _values = nil; _editSwitch = nil; _hapticsSwitch = nil; _overlaySwitch = nil; _swapShouldersSwitch = nil; _sticksOnlySwitch = nil; _floatingSwitch = nil; _settingsColumns = nil;
+    _sliders = nil; _values = nil; _editSwitch = nil; _hapticsSwitch = nil; _overlaySwitch = nil; _swapShouldersSwitch = nil; _sticksOnlySwitch = nil; _jumpOnlySwitch = nil; _floatingSwitch = nil; _settingsColumns = nil;
     _simpleSwitch = nil; _stickButtonsSwitch = nil; _addZoneButton = nil; _clearZoneButton = nil;
     [self updateAppearance]; if (self.configurationChanged) self.configurationChanged();
     // The zones' own menus (which button each sends) belong to the editor.
@@ -1197,6 +1251,7 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
     _hapticsSwitch.on = _preferences.hapticsEnabled; _swapShouldersSwitch.on = !_preferences.swapShoulders;
     _overlaySwitch.on = _preferences.performanceOverlayEnabled;
     _sticksOnlySwitch.on = _preferences.sticksOnly; _floatingSwitch.on = _preferences.floatingSticks;
+    _jumpOnlySwitch.on = _preferences.jumpReplacesCameraStick; _jumpOnlySwitch.enabled = _preferences.sticksOnly;
     _simpleSwitch.on = _preferences.mode == AKGamepadLayoutModeSimple;
     _stickButtonsSwitch.on = _preferences.stickButtonsEnabled;
     [self syncAbilityZones]; [self updateSettingsZoneCount];
@@ -1204,7 +1259,7 @@ static const CGFloat AKJumpReachOuter = 146, AKJumpReachInner = 50, AKJumpReachA
 }
 - (void)finishConfiguration {
     [self reset]; [_preferences save]; _editing = NO; [_dragOrigins removeAllObjects];
-    [_settings removeFromSuperview]; _settings = nil; _sliders = nil; _values = nil; _editSwitch = nil; _hapticsSwitch = nil; _overlaySwitch = nil; _swapShouldersSwitch = nil; _sticksOnlySwitch = nil; _floatingSwitch = nil; _settingsColumns = nil;
+    [_settings removeFromSuperview]; _settings = nil; _sliders = nil; _values = nil; _editSwitch = nil; _hapticsSwitch = nil; _overlaySwitch = nil; _swapShouldersSwitch = nil; _sticksOnlySwitch = nil; _jumpOnlySwitch = nil; _floatingSwitch = nil; _settingsColumns = nil;
     _simpleSwitch = nil; _stickButtonsSwitch = nil; _addZoneButton = nil; _clearZoneButton = nil;
     [self syncAbilityZones];
     [self updateAppearance]; if (self.configurationChanged) self.configurationChanged();

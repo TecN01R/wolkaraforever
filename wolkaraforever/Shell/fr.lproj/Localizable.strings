@@ -470,6 +470,7 @@
 "touch.settings.outerTriggers" = "Gâchettes à l’extérieur";
 "touch.settings.outerTriggers.simple" = "La disposition simple n’a pas de gâchettes à déplacer.";
 "touch.settings.sticksOnly" = "Sticks et saut seulement (masquer les autres boutons)";
+"touch.settings.jumpReplacesCameraStick" = "Saut à la place du stick caméra (faites glisser sur le jeu pour tourner la caméra)";
 "touch.settings.floatingSticks" = "Sticks flottants (sous le pouce, saut dans le coin)";
 "touch.settings.haptics" = "Retour haptique";
 "touch.settings.overlay" = "Affichage des performances";

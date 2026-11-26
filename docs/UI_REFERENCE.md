@@ -333,6 +333,7 @@ each one is.
 | **Transparency** | How solid the on-screen controls are. |
 | **Shoulder button size**, **Sticks and face button size** | The size of the controls. |
 | **Sticks and jump only** | Hides every other button (phone layout). |
+| **Jump instead of camera stick** (this fork) | With **Sticks and jump only** on: the camera stick is not drawn, a round **Jump** button takes its place, and you turn the camera by dragging on the game. With floating sticks, the camera half of the screen goes to the game and the corner jump stays. Greyed when **Sticks and jump only** is off. |
 | **Floating sticks** | Sticks that find your thumb, with jump in the corner (phone layout). |
 | **Triggers on the outside** | Which side the shoulder buttons sit on. Greyed in the simple layout. |
 | **Haptic feedback** | Controller vibration. |

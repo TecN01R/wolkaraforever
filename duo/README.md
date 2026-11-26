@@ -29,6 +29,9 @@ and when, is in [CHANGELOG.md](CHANGELOG.md).
 - **Stay signed in.** The experimental Battle.net login can keep its web session between app
   launches (opt-in, in the login sheet; upstream keeps it in memory only). *Not yet tested on a
   device.*
+- **Jump instead of camera stick.** A touch-controls switch (with **Sticks and jump only**): the
+  camera stick goes, a round Jump button takes its place, and the camera turns by dragging on the
+  game. *Not yet tested on a device.*
 - **Reset All WoW Settings.** A UI Manager button that empties the game's `Config.wtf` except
   region, language, account name and Gamepad UI, after the usual backup. The game then starts
   with its own defaults and runs its hardware detection again. *Not yet tested on a device.*

@@ -92,6 +92,7 @@ NSString *AKGamepadStickButtonElement(NSString *element) {
         // v1.0.9 has, and the corner jump reserves the space the fan's tab sits in, so turning
         // it on silently would move an arrangement someone already uses.
         self.floatingSticks = Number(values[@"floatingSticks"],0) != 0;
+        self.jumpReplacesCameraStick = Number(values[@"jumpReplacesCameraStick"],0) != 0;
         // Only what the user stored: an empty list reserves nothing.
         NSMutableArray<NSDictionary<NSString *, NSNumber *> *> *areas = [NSMutableArray new];
         id kept = values[@"keepFree"];
@@ -188,7 +189,8 @@ NSString *AKGamepadStickButtonElement(NSString *element) {
         @"opacity":@(_opacity),@"rearScale":@(_rearScale),
         @"frontScale":@(_frontScale),@"hapticsEnabled":@(_hapticsEnabled),@"swapShoulders":@(_swapShoulders),
         @"performanceOverlayEnabled":@(_performanceOverlayEnabled),@"sticksOnly":@(_sticksOnly),
-        @"floatingSticks":@(_floatingSticks),@"keepFree":_keepFree,@"elements":_elements,
+        @"floatingSticks":@(_floatingSticks),@"jumpReplacesCameraStick":@(_jumpReplacesCameraStick),
+        @"keepFree":_keepFree,@"elements":_elements,
         @"positions":[_positionsFull copy], SimplePositionsKey:[_positionsSimple copy]} forKey:LayoutKey];
     [NSNotificationCenter.defaultCenter postNotificationName:AKGamepadLayoutDidChangeNotification object:_defaults];
 }
@@ -198,6 +200,7 @@ NSString *AKGamepadStickButtonElement(NSString *element) {
     self.performanceOverlayEnabled = NO;
     self.sticksOnly = AKInterfaceModeIsMobile();
     self.floatingSticks = NO;
+    self.jumpReplacesCameraStick = NO;
     self.keepFree = @[];
     self.elements = @{};
     // Reset is the one control that means "as a fresh install": Full, no stick buttons, no
@@ -382,6 +385,7 @@ static const NSUInteger AKGamepadMaximumZones = 6;
              @"hapticsEnabled":@(_hapticsEnabled), @"swapShoulders":@(_swapShoulders),
              @"performanceOverlayEnabled":@(_performanceOverlayEnabled),
              @"sticksOnly":@(_sticksOnly), @"floatingSticks":@(_floatingSticks),
+             @"jumpReplacesCameraStick":@(_jumpReplacesCameraStick),
              @"keepFree":_keepFree, @"elements":_elements,
              @"positions":[_positionsFull copy], SimplePositionsKey:[_positionsSimple copy]};
 }
@@ -402,6 +406,8 @@ static const NSUInteger AKGamepadMaximumZones = 6;
     if ([values[@"performanceOverlayEnabled"] isKindOfClass:NSNumber.class]) _performanceOverlayEnabled = [values[@"performanceOverlayEnabled"] boolValue];
     if ([values[@"sticksOnly"] isKindOfClass:NSNumber.class]) _sticksOnly = [values[@"sticksOnly"] boolValue];
     if ([values[@"floatingSticks"] isKindOfClass:NSNumber.class]) _floatingSticks = [values[@"floatingSticks"] boolValue];
+    if ([values[@"jumpReplacesCameraStick"] isKindOfClass:NSNumber.class])
+        _jumpReplacesCameraStick = [values[@"jumpReplacesCameraStick"] boolValue];
     NSMutableArray<NSDictionary<NSString *, NSNumber *> *> *areas = [NSMutableArray new];
     id kept = values[@"keepFree"];
     if ([kept isKindOfClass:NSArray.class]) for (id entry in (NSArray *)kept) {
