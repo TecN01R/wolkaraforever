@@ -115,8 +115,8 @@ FOUNDATION_EXPORT AKBatterySaverFramePolicy AKBatterySaverFramePolicyMake(BOOL e
                                                                          BOOL lowPowerMode,
                                                                          BOOL dimmed);
 
-/// The same rule, reading the live device: the launch snapshot, the charger, Low Power Mode
-/// and the thermal state. `dimmed` is the AppKit adapter's idle state.
+/// The same rule, reading the live device: the launch snapshot, the charger and Low Power
+/// Mode (not the thermal state; see above). `dimmed` is the AppKit adapter's idle state.
 FOUNDATION_EXPORT AKBatterySaverFramePolicy AKBatterySaverResolvedPolicy(BOOL dimmed);
 
 /// Whether this device is on external power. Never changes the battery's own state: it

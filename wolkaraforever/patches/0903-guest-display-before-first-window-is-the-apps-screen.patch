@@ -9,34 +9,67 @@
 # detection used that size ("Detected Graphics Defaults ... WindowSize: 678x466"); the window
 # itself was sized correctly a moment later ("window content size -> 951x669").
 #
-# Now the fallback is the first window scene's coordinate space and screen - the scene
-# -ak_orderFront seeds the geometry from, so the answer does not change when the window
-# appears - read on the main thread, where the guest's startup runs. Off the main thread, and
-# before there is a window scene, the answer is UIScreen.mainScreen's, exactly as before. The
-# first time the two screens disagree, each adapter logs which one the guest was given.
-# NSScreen's maximum frame rate follows the same screen (both Duo screens report 120 Hz).
-# Single-screen devices get the same answers as before.
+# Now the fallback is the window scene's coordinate space and screen, read on the main thread,
+# where the guest's startup runs. Which scene: the one the player is using, ranked (application
+# role, then the key window's scene, then foreground-active, then foreground) rather than the
+# first of connectedScenes, which is an unordered set; -ak_orderFront takes its scene by the same
+# rule, so the answer does not change when the window appears. A question from another thread
+# gets the main thread's last answer; only before the main thread has answered, or before there
+# is a window scene, is it UIScreen.mainScreen's, exactly as before. The first time the two
+# screens disagree, each adapter logs which one the guest was given. NSScreen's maximum frame
+# rate follows the same screen (both Duo screens report 120 Hz). Single-screen devices with one
+# window get the same answers as before.
+#
+# Confirmed on the iPhone Duo (iOS 27.2.1, 2026-11-26): unfolded, gx.log reads "Monitor 0
+# Size(951x669) Refresh Rate(120Hz)" and detection "WindowSize: 951x669".
 #
 # Applies after: 0023-appkit-backing-scale.patch, 0029-report-selected-guest-mode.patch,
-#                0031-cache-guest-display-mode.patch, 0045-iphone-guest-display.patch
+#                0031-cache-guest-display-mode.patch, 0045-iphone-guest-display.patch,
+#                0901-duo-direct-touch-follows-interface-mode.patch
 # Applies to: translation/CoreGraphics/Displays.m, translation/AppKit/Screens.m,
-#             translation/AKSupport/AKGuestDisplayFallback.h (new)
+#             translation/AppKit/AppKit.m, translation/AKSupport/AKGuestDisplayFallback.h (new)
 # Upstream: candidate.
 #
 diff --git a/translation/AKSupport/AKGuestDisplayFallback.h b/translation/AKSupport/AKGuestDisplayFallback.h
 new file mode 100644
-index 0000000..f24c3a8
+index 0000000..a9035d7
 --- /dev/null
 +++ b/translation/AKSupport/AKGuestDisplayFallback.h
-@@ -0,0 +1,49 @@
-+// What the guest is told about its display before a window has published one.
+@@ -0,0 +1,83 @@
++// What the guest is told about its display before a window has published one, and which window
++// scene the guest's first window goes on.
 +//
 +// Included by the adapters that answer display questions (CoreGraphics' CGDisplay*, AppKit's
-+// NSScreen); both link UIKit, which libAKSupport itself does not, so this is a header and not
-+// a function of that library.
++// NSScreen) and by AppKit's window; all link UIKit, which libAKSupport itself does not, so this
++// is a header and not a function of that library.
 +#pragma once
 +#import <UIKit/UIKit.h>
 +#import "AKSupport.h"
++
++// The window scene the guest's window belongs on: the one the player is using. Main thread only.
++//
++// connectedScenes is an unordered set. With one scene - every iPhone, and an iPad running one
++// window - any rule answers the same. With several (an iPad with two windows of this app, or a
++// scene on an external display), "the first one" is arbitrary, so the choice is ranked: a scene
++// of the application role (not an external display's), then one holding the key window (the
++// launcher's window the player pressed Play in), then the foreground-active one, then a
++// foreground one. -ak_orderFront and the fallback below both ask this, so the geometry the guest
++// is told before its window exists is the geometry the window then has.
++static inline UIWindowScene *AKGuestWindowScene(void) {
++    UIWindowScene *best = nil;
++    NSInteger bestRank = -1;
++    for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
++        if (![scene isKindOfClass:UIWindowScene.class]) continue;
++        UIWindowScene *windowScene = (UIWindowScene *)scene;
++        NSInteger rank = 0;
++        if ([windowScene.session.role isEqualToString:UIWindowSceneSessionRoleApplication]) rank += 8;
++        if (windowScene.keyWindow) rank += 4;
++        if (windowScene.activationState == UISceneActivationStateForegroundActive) rank += 2;
++        else if (windowScene.activationState == UISceneActivationStateForegroundInactive) rank += 1;
++        if (rank > bestRank) { best = windowScene; bestRank = rank; }
++    }
++    return best;
++}
 +
 +// Until the guest's first window is ordered front, nothing has published the real geometry
 +// (AKSetGuestDisplayGeometry), and a guest may already ask: World of Warcraft measures its
@@ -44,40 +77,73 @@ index 0000000..f24c3a8
 +// which is the device's one screen on every iPhone and iPad - but on the iPhone Duo it is the
 +// cover screen (466 x 678 points) even while the app runs unfolded on the inner one, so the
 +// game measured the wrong screen. The window scene the app is on is the answer Apple points to
-+// (UIScreen.mainScreen is deprecated in its favour), and the first window scene is the one
-+// -ak_orderFront seeds the geometry from, so the answer does not change when the window appears.
++// (UIScreen.mainScreen is deprecated in its favour), and it is the scene -ak_orderFront puts the
++// window on and seeds the geometry from, so the answer does not change when the window appears.
 +//
-+// UIKit is read on the main thread only, where the guest's startup runs. Anywhere else, and
-+// before there is a window scene, the answer is the main screen's, as it was.
++// UIKit is read on the main thread only, where the guest's startup runs. A question from another
++// thread gets the last answer the main thread gave, so both threads agree; only before the main
++// thread has answered at all, or before there is a window scene, is it the main screen's.
 +static inline void AKGuestDisplayFallback(CGSize *size, double *refresh) {
-+    UIScreen *screen = UIScreen.mainScreen;
-+    CGSize bounds = screen.bounds.size;
++    static CGSize lastSize;
++    static double lastRefresh;
++    static BOOL answered;
++    CGSize bounds = CGSizeZero;
++    double rate = 0;
 +    if (NSThread.isMainThread) {
-+        for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
-+            if (![scene isKindOfClass:UIWindowScene.class]) continue;
-+            UIWindowScene *windowScene = (UIWindowScene *)scene;
-+            CGSize sceneSize = windowScene.coordinateSpace.bounds.size;
-+            if (windowScene.screen && sceneSize.width > 0 && sceneSize.height > 0) {
-+                if (!CGSizeEqualToSize(sceneSize, bounds)) {
-+                    // Said once per adapter: a device log shows the two screens disagreed and
-+                    // which one the guest was given.
-+                    static BOOL said;
-+                    if (!said) {
-+                        said = YES;
-+                        AKLog(@"display: asked before the first window; answering with this app's window scene, %.0fx%.0f at %ld Hz, not the main screen's %.0fx%.0f",
-+                              sceneSize.width, sceneSize.height, (long)windowScene.screen.maximumFramesPerSecond,
-+                              bounds.width, bounds.height);
-+                    }
++        UIScreen *screen = UIScreen.mainScreen;
++        bounds = screen.bounds.size;
++        UIWindowScene *windowScene = AKGuestWindowScene();
++        CGSize sceneSize = windowScene.coordinateSpace.bounds.size;
++        if (windowScene.screen && sceneSize.width > 0 && sceneSize.height > 0) {
++            if (!CGSizeEqualToSize(sceneSize, bounds)) {
++                // Said once per adapter: a device log shows the two screens disagreed and
++                // which one the guest was given.
++                static BOOL said;
++                if (!said) {
++                    said = YES;
++                    AKLog(@"display: asked before the first window; answering with this app's window scene, %.0fx%.0f at %ld Hz, not the main screen's %.0fx%.0f",
++                          sceneSize.width, sceneSize.height, (long)windowScene.screen.maximumFramesPerSecond,
++                          bounds.width, bounds.height);
 +                }
-+                screen = windowScene.screen;
-+                bounds = sceneSize;
 +            }
-+            break;   // the first window scene, as -ak_orderFront takes it
++            screen = windowScene.screen;
++            bounds = sceneSize;
 +        }
++        rate = (double)screen.maximumFramesPerSecond;
++        @synchronized(UIScreen.class) { lastSize = bounds; lastRefresh = rate; answered = YES; }
++    } else {
++        BOOL have;
++        @synchronized(UIScreen.class) { have = answered; bounds = lastSize; rate = lastRefresh; }
++        if (!have) { bounds = UIScreen.mainScreen.bounds.size; rate = (double)UIScreen.mainScreen.maximumFramesPerSecond; }
 +    }
 +    if (size) *size = bounds;
-+    if (refresh) *refresh = (double)screen.maximumFramesPerSecond;
++    if (refresh) *refresh = rate;
 +}
+diff --git a/translation/AppKit/AppKit.m b/translation/AppKit/AppKit.m
+index 91ad3f5..e1f4053 100644
+--- a/translation/AppKit/AppKit.m
++++ b/translation/AppKit/AppKit.m
+@@ -6,6 +6,7 @@
+ #import "AKTouchEventPump.h"
+ #import "TouchGamepadLayout.h"
+ #import "InterfaceMode.h"
++#import "AKGuestDisplayFallback.h"
+ 
+ // The guest screen's pixels per point, defined in Screens.m.
+ CGFloat AKGuestBackingScale(void);
+@@ -1161,9 +1162,9 @@ static void logLayer(CALayer *layer,unsigned depth) {
+ - (void)ak_orderFront {
+     BOOL wasKey=self.keyWindow;
+     if (!_uiWindow) {
+-        UIWindowScene *scene = nil;
+-        for (UIScene *s in UIApplication.sharedApplication.connectedScenes)
+-            if ([s isKindOfClass:UIWindowScene.class]) { scene = (UIWindowScene *)s; break; }
++        // The scene the player is using, by the same rule the display fallback answered with
++        // before this window existed (AKGuestDisplayFallback.h), not the set's arbitrary first.
++        UIWindowScene *scene = AKGuestWindowScene();
+         if (!scene) { AKLog(@"makeKeyAndOrderFront: no UIWindowScene connected"); return; }
+         _uiWindow = [[UIWindow alloc] initWithWindowScene:scene];
+         // A resizable phone can have a scene larger than UIScreen.bounds. Seed
 diff --git a/translation/AppKit/Screens.m b/translation/AppKit/Screens.m
 index 8915efd..ab83d76 100644
 --- a/translation/AppKit/Screens.m

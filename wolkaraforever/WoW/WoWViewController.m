@@ -1887,9 +1887,31 @@ static NSString *TKRenderQualityTitle(TKDeviceProfile *profile, TKRenderQuality 
     return stored.length?stored:nil;
 }
 // The panel's own pixels per point, which a phone's Quality renders at.
+// The scale Quality renders at on a phone: the native scale of the largest screen this launcher
+// has been shown on, remembered. The game's scale is fixed for a whole session, and a phone with
+// two screens (the iPhone Duo: a 3x cover, a 2.8x inner screen) can be folded or unfolded during
+// one. Taking the screen the launcher happens to be on made a session started folded draw 3x on
+// the inner screen after unfolding - about 14% more pixels than that panel has. The large screen
+// is the one played on, so Quality is its own pixels wherever the session starts; on the cover
+// screen that is 2.8x, a little under its native 3x and still above Balanced's 2x. A phone with
+// one screen remembers that screen. Until the large screen has been seen, the current one counts.
+static NSString *const TKQualityScreenAreaKey=@"WolkaraForeverQualityScreenArea";
+static NSString *const TKQualityScreenScaleKey=@"WolkaraForeverQualityScreenScale";
 - (CGFloat)screenNativeScale {
-    CGFloat scale=self.view.window.windowScene.screen.nativeScale;
-    return scale>0 ? scale : self.traitCollection.displayScale;
+    UIScreen *screen=self.view.window.windowScene.screen;
+    CGFloat scale=screen.nativeScale;
+    if (!(scale>0)) return self.traitCollection.displayScale;
+    NSUserDefaults *defaults=NSUserDefaults.standardUserDefaults;
+    double area=screen.bounds.size.width*screen.bounds.size.height;
+    double seenArea=[defaults doubleForKey:TKQualityScreenAreaKey], seenScale=[defaults doubleForKey:TKQualityScreenScaleKey];
+    if (area>0 && (area>=seenArea || !(seenScale>0))) {
+        if (area!=seenArea || scale!=seenScale) {
+            [defaults setDouble:area forKey:TKQualityScreenAreaKey];
+            [defaults setDouble:scale forKey:TKQualityScreenScaleKey];
+        }
+        return scale;
+    }
+    return seenScale>0 ? seenScale : scale;
 }
 - (TKDeviceProfile *)selectedDeviceProfile {
     TKDeviceProfile *profile=[TKDeviceProfile resolvedProfileWithOverride:[self deviceProfileOverrideIdentifier]];

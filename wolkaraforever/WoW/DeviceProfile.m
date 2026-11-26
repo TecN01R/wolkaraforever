@@ -96,15 +96,15 @@
                     chip:@"" width:0 height:0 highest:TKRenderQualityBalanced qualityScale:0 measured:NO
                    notes:@"Model from Xcode's device catalogue. Uses the current window size; 2x is a readability default, not a measured frame-rate claim."
                   models:@[@"iPhone19,3"]],
-            // Quality on the Duo is the panel's own pixels: the launcher passes the screen's
-            // native scale in (-profileWithWidth:height:screenScale:), and 3.0 stands for it
-            // only until it does. Balanced (2x) is stretched onto that panel by CoreAnimation, so
+            // Quality on the Duo is the inner panel's own pixels: the launcher passes the native
+            // scale of the largest screen it has been shown on (-profileWithWidth:height:screenScale:),
+            // and 3.0 stands for it only until it does. Balanced (2x) is stretched onto that panel by CoreAnimation, so
             // the game's interface is soft there; at Quality the interface is drawn pixel for
             // pixel and the game's own Render Scale lowers the 3D world alone. Not benchmarked,
             // so it is offered, asks first, and never becomes the default.
             [self record:@"iphone-duo" name:@"iPhone Duo" family:TKDeviceFamilyPhone
                     chip:@"" width:0 height:0 highest:TKRenderQualityQuality qualityScale:3.0 measured:NO
-                   notes:@"Model confirmed on device and in Xcode. Uses the current window, including fold and orientation changes. Quality is the screen's native scale with the game's own Render Scale lowering the 3D world; not benchmarked, so Balanced stays the default."
+                   notes:@"Model confirmed on device and in Xcode. Uses the current window, including fold and orientation changes. Quality is the inner screen's native scale (also on the cover screen, as the scale holds for a whole session) with the game's own Render Scale lowering the 3D world; not benchmarked, so Balanced stays the default."
                   models:@[@"iPhone19,4"]],
             // Measured on this project: the 12.9-inch M1 is "Dadpad", the device every
             // performance figure in this project was taken on.

@@ -53,7 +53,7 @@ typedef NS_ENUM(NSInteger, TKQualityFinding) {
 @property (nonatomic, readonly) CGFloat nativeHeight;
 // The highest quality this device may be offered. Quality is only here when someone measured
 // it; a device that has not been measured is offered Balanced and no further. One exception, by
-// its owner's choice: the iPhone Duo offers Quality at its screen's native scale, unmeasured, so
+// its owner's choice: the iPhone Duo offers Quality at its inner screen's native scale, unmeasured, so
 // the game's interface can be drawn pixel for pixel while its own Render Scale lowers the 3D.
 @property (nonatomic, readonly) TKRenderQuality highestQuality;
 // The backing scale for a quality, or 0 when this device may not be asked for it.

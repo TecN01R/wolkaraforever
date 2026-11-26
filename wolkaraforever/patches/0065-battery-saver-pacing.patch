@@ -20,7 +20,7 @@
 #                         layer plus the interval, whichever is later
 #
 # With the cap Off nothing is installed at all: the presentation path is the one it had
-# before this feature existed. The environment - charger, Low Power Mode, thermal state - is
+# before this feature existed. The environment - charger and Low Power Mode - is
 # re-resolved at most once a second on the render path, and the AFK dim's 10 FPS applies
 # immediately through its notification.
 #
@@ -105,8 +105,8 @@
 +
 +// The interval the next presentation is held for, in seconds; 0 when nothing caps it.
 +//
-+// The environment - charger, Low Power Mode, thermal state - can change during a session,
-+// and a thermal state is exactly what a cap is for. Reading it is resolved at most once a
++// The environment - charger and Low Power Mode - can change during a session (the device's
++// temperature is deliberately not read: see BatterySaverPolicy.h). It is resolved at most once a
 +// second rather than per frame: a device query on the render path would cost more than the
 +// frames it saves. The dim is applied immediately through its notification instead.
 +static double AKBatterySaverPaceInterval(void) {

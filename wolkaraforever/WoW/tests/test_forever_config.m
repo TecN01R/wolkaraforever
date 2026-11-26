@@ -164,12 +164,12 @@ int main(void) {
               @"SET portal \"eu\"\n"
                "SET renderScale \"1.000000\"\n"
                "SET cameraDistance \"1.5\"\n");
-        NSDictionary *presetCVars = @{@"renderScale": @"0.75", @"gxForegroundFPS": @"60"};
+        NSDictionary *presetCVars = @{@"renderScale": @"0.75", @"maxFPS": @"60"};
         assert([TKForeverUI setCVars:presetCVars inWorkingDirectory:root error:&error]);
         NSString *afterCVars = Read(ConfigPath(root));
         assert([afterCVars isEqual:@"SET portal \"eu\"\n"
                                 "SET cameraDistance \"1.5\"\n"
-                                "SET gxForegroundFPS \"60\"\n"
+                                "SET maxFPS \"60\"\n"
                                 "SET renderScale \"0.75\"\n"]);
         // A second application is stable: no duplicated lines.
         assert([TKForeverUI setCVars:presetCVars inWorkingDirectory:root error:&error]);
@@ -232,13 +232,13 @@ int main(void) {
             assert(found == 1);
         }
         assert([preset containsString:@"SET renderScale \"0.75\""]);
-        assert([preset containsString:@"SET gxForegroundFPS \"60\""]);
+        assert([preset containsString:@"SET maxFPS \"60\""]);
 
         // --- a graphics reset removes what the preset wrote
         assert([TKForeverUI resetGraphicsInWorkingDirectory:root error:&error]);
         NSString *reset = Read(ConfigPath(root));
         assert(![reset containsString:@"renderScale"]);
-        assert(![reset containsString:@"gxForegroundFPS"]);
+        assert(![reset containsString:@"maxFPS"]);
         assert([reset containsString:@"SET portal \"US\""]);
 
         // --- a WTF folder outside the working directory is refused

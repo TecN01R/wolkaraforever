@@ -14,7 +14,8 @@ correctness.
 
 ### Added
 
-- **Reset All WoW Settings.** A UI Manager button beside the graphics reset. It empties the
+- **Reset WoW Settings on This Device** (first named Reset All WoW Settings). A UI Manager button
+  beside the graphics reset. It empties the
   game's `Config.wtf` except region, language, account name, the Battle.net agent's id, Gamepad
   UI and the cache bookkeeping, after the usual backup, so the settings in that file (graphics,
   sound, interface scale, gamepad) return to the game's own defaults and its hardware detection
@@ -24,8 +25,8 @@ correctness.
   Render Scale 50%, its own choice for the unfolded screen (raise Render Scale again to taste).
 - **Jump instead of camera stick.** A switch in the in-game touch controls, under **Sticks and
   jump only**, shown only while that is on. With it on, the camera stick is not drawn, a round
-  Jump button the size of the stick itself sits where it was, and the camera turns by dragging
-  on the game. Off by default. *Installed on the Duo; not yet confirmed in play.*
+  Jump button the size of the stick itself sits where it was, and touches there go to the game,
+  where dragging is meant to turn the camera. Off by default. *Installed on the Duo; not yet confirmed in play.*
 - **Reset Positions in the layout editor.** Beside **Done editing**: every control of the
   arrangement being edited (Full or Simple) goes back to its default place, after a one-item
   confirmation menu. Sizes, switches and ability zones stay. *Not yet tested on a device.*
@@ -42,7 +43,30 @@ correctness.
   used that size while it played on the 951 x 669 point inner screen. It is now told about the
   screen the app is on (patch 0903, a candidate for upstream). The window itself was always
   resized correctly a moment later. Confirmed on the Duo: unfolded, the game now logs
-  "Monitor 0 ... Size(951x669) ... Refresh Rate(120Hz)".
+  "Monitor 0 ... Size(951x669) ... Refresh Rate(120Hz)". Since then it also picks the window
+  scene the player is using when there are several, the same one the game's window then goes
+  on, and answers a question from another thread with the main thread's last answer instead of
+  the main screen.
+- **Reset All promised more than it does.** It resets the game's `Config.wtf` only. WoW: Forever
+  keeps over half its settings (946 of 1,795, including 289 of 295 camera settings) per account
+  or character in other files, synced with Blizzard, and those were never reset. The button is
+  now **Reset WoW Settings on This Device** and its confirmation, in all three languages, says
+  which settings it resets and which it does not.
+- **Jump instead of camera stick claimed the drag turns the camera.** Not yet confirmed with
+  Gamepad UI on, so the switch's label no longer says so.
+- **Duo Quality after folding or unfolding.** The game's scale is fixed for a session, and
+  Quality used the scale of whichever screen the launcher was on, so a session started folded
+  drew 3x on the 2.8x inner screen after unfolding, about 14% more pixels than the panel. Quality
+  is now the inner screen's scale wherever a session starts (remembered once the launcher has
+  been shown unfolded); on the cover screen that is 2.81, a little under its native 3.
+- **The graphics-only reset's list (upstream's).** 26 of its 49 setting names do not exist in
+  WoW: Forever. They are replaced by the names the client uses, and the list now includes what
+  it missed: the frame-rate caps, Target FPS, the raid and battleground graphics set, lighting,
+  global illumination and PBR liquid detail. It still leaves `hwDetect`, as before, so it still
+  does not re-run hardware detection. The unused performance preset's two frame-cap names are
+  corrected the same way.
+- **Battery Saver comments (upstream's)** said it reads the device's thermal state. It reads
+  the charger and Low Power Mode only, as its rule says; the comments now agree.
 
 ### Notes
 

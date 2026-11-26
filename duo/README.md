@@ -34,16 +34,17 @@ and when, is in [CHANGELOG.md](CHANGELOG.md).
   launches (opt-in, in the login sheet; upstream keeps it in memory only). *Not yet tested on a
   device.*
 - **Jump instead of camera stick.** A touch-controls switch (with **Sticks and jump only**): the
-  camera stick goes, a round Jump button takes its place, and the camera turns by dragging on the
-  game. *Installed on the Duo; not yet confirmed in play.*
-- **Reset All WoW Settings.** A UI Manager button that empties the game's `Config.wtf` except
+  camera stick goes, a round Jump button takes its place, and touches there go to the game, where
+  dragging is meant to turn the camera. *Installed on the Duo; not yet confirmed in play.*
+- **Reset WoW Settings on This Device.** A UI Manager button that empties the game's `Config.wtf` except
   region, language, account name and Gamepad UI, after the usual backup. Graphics, sound,
   interface scale and gamepad settings go back to the game's defaults and its hardware detection
   runs again; settings the game keeps per account or character (most camera, nameplate,
   action-bar and chat options) are not reset. On the Duo it comes back at
   graphics level 4 with Render Scale 50%; raise Render Scale again if you'd set it higher.
-- **Render profile.** On the iPhone Duo, **Quality** renders at the screen's native scale, so the
-  game's interface is drawn pixel for pixel. Lower the game's own Render Scale to keep the 3D
+- **Render profile.** On the iPhone Duo, **Quality** renders at the inner screen's native scale, so
+  the game's interface is drawn pixel for pixel there. The scale holds for a whole session, so a
+  session started on the cover screen uses it too (2.81, a little under the cover's native 3). Lower the game's own Render Scale to keep the 3D
   light. Balanced (2x) stays the default. Confirmed on the Duo (2026-11-25): its native scale is
   2.81, so Quality is 2670 × 1878 unfolded. The game then shows Resolution "Custom", and the
   number beside Render Scale is the 3D size (for example 2010x1414 at 75%).

@@ -114,7 +114,7 @@
 "home.permissions" = "Toggle Permissions (Mic & Speech)";
 "home.performance.backup" = "Backup WoW UI Configuration";
 "home.performance.reset" = "Reset to Default Wow UI Configuration";
-"home.performance.resetAll" = "Reset All WoW Settings";
+"home.performance.resetAll" = "Reset WoW Settings on This Device";
 "home.performance.restore" = "Restore WoW UI Configuration";
 "home.performance.settingsFolder" = "Open Settings Folder";
 "home.performance.gamepad" = "Gamepad UI";
@@ -244,8 +244,8 @@
 "home.reset.incomplete.message" = "The backup is %@, but the graphics settings could not be reset. %@";
 "home.reset.done.title" = "Graphics reset";
 "home.reset.done.message" = "Default graphics settings take effect when Forever next launches. Backup: %@.";
-"home.resetAll.confirm.title" = "Reset all WoW settings?";
-"home.resetAll.confirm.message" = "Every setting in the game's Config.wtf goes back to the game's own defaults when Forever next starts: graphics, sound, interface scale, camera and controls. Region, language, your account name and Gamepad UI are kept, as are key bindings, macros, add-ons and their settings. A complete backup of WTF and Interface is made first, and Restore WoW UI Configuration can bring everything back.";
+"home.resetAll.confirm.title" = "Reset WoW's settings on this device?";
+"home.resetAll.confirm.message" = "The settings the game keeps on this device, in its Config.wtf, go back to the game's own defaults when Forever next starts: graphics, sound, interface scale and gamepad settings, and the game detects your hardware again. Settings the game keeps for your account and characters, including most camera, nameplate, action-bar and chat options, are not in that file and are not reset. Region, language, your account name and Gamepad UI are kept, as are key bindings, macros, add-ons and their settings. A complete backup of WTF and Interface is made first, and Restore WoW UI Configuration can bring everything back.";
 "home.resetAll.action" = "Reset all settings";
 "home.resetAll.noBackup.message" = "The backup could not be created, so the game settings were left alone. %@";
 "home.resetAll.incomplete.message" = "The backup is %@, but the game settings could not be reset. %@";
@@ -472,7 +472,7 @@
 "touch.settings.outerTriggers" = "Triggers on the outside";
 "touch.settings.outerTriggers.simple" = "The simple layout has no triggers to move.";
 "touch.settings.sticksOnly" = "Sticks and jump only (hide the other buttons)";
-"touch.settings.jumpReplacesCameraStick" = "Jump instead of camera stick (drag the game to turn the camera)";
+"touch.settings.jumpReplacesCameraStick" = "Jump instead of camera stick";
 "touch.settings.floatingSticks" = "Floating sticks (find the thumb, jump in the corner)";
 "touch.settings.haptics" = "Haptic feedback";
 "touch.settings.overlay" = "Performance overlay";

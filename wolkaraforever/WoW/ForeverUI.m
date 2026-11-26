@@ -57,22 +57,31 @@ NSSet<NSString *> *TKForeverUIGraphicsCVars(void) {
     static dispatch_once_t once;
     dispatch_once(&once, ^{
         set = [NSSet setWithArray:@[
-            // Display and renderer
-            @"gxAdapter", @"gxApi", @"gxColorBits", @"gxDepthBits", @"gxCursor",
-            @"gxFixLag", @"gxForegroundFPS", @"gxBackgroundFPS", @"gxFullscreenResolution",
-            @"gxMaximize", @"gxMaxFrameLatency", @"gxMonitor", @"gxMSAA", @"gxMultisample",
-            @"gxMultisampleQuality", @"gxRefresh", @"gxResolution", @"gxScreenshotFormat",
-            @"gxTextureCacheSize", @"gxTripleBuffer", @"gxVSync", @"gxWindow",
-            @"gxWindowedResolution",
+            // Display and renderer. Names checked against WoW: Forever's own CVar list
+            // (client 1.60.1): it has no gxColorBits, gxDepthBits, gxCursor, gxFixLag,
+            // gxRefresh, gxResolution, gxTextureCacheSize, gxWindow, gxMultisample* or
+            // gxTripleBuffer, and the others are spelled as below.
+            @"gxAdapter", @"gxApi", @"gxFullscreenResolution", @"gxMaximize",
+            @"gxMaxFrameLatency", @"gxMonitor", @"gxWindowedResolution", @"screenshotFormat",
+            // Frame-rate caps and the target the client lowers quality to hold
+            @"useMaxFPS", @"maxFPS", @"useMaxFPSBk", @"maxFPSBk", @"useTargetFPS", @"targetFPS",
             // Graphics quality
             @"graphicsQuality", @"graphicsTextureResolution", @"graphicsSpellDensity",
             @"graphicsViewDistance", @"graphicsGroundClutter", @"graphicsLiquidDetail",
-            @"graphicsSunshafts", @"graphicsParticleDensity", @"graphicsShadowQuality",
+            @"graphicsPBRLiquidDetail", @"graphicsParticleDensity", @"graphicsShadowQuality",
             @"graphicsSSAO", @"graphicsDepthEffects", @"graphicsOutlineMode",
-            @"graphicsComputeEffects", @"graphicsReflectionQuality", @"graphicsTextureFiltering",
-            @"graphicsProjectedTextures", @"graphicsEnvironmentDetail", @"graphicsTripleBuffering",
-            @"graphicsMSAA", @"graphicsResampleQuality", @"graphicsGammaAdjustment",
-            @"graphicsContrast", @"graphicsBrightness", @"graphicsRaidFramerate",
+            @"graphicsComputeEffects", @"graphicsProjectedTextures", @"graphicsEnvironmentDetail",
+            @"graphicsLightMode", @"giQuality", @"sunShafts", @"reflectionMode",
+            @"textureFilteringMode", @"MSAAQuality", @"MSAAAlphaTest", @"ffxAntiAliasingMode",
+            @"ResampleQuality", @"ResampleSharpness", @"Gamma", @"Contrast", @"Brightness",
+            // Raid and battleground graphics, the client's second set of the same sliders
+            @"RAIDgraphicsQuality", @"raidGraphicsTextureResolution", @"raidGraphicsSpellDensity",
+            @"raidGraphicsViewDistance", @"raidGraphicsGroundClutter", @"raidGraphicsLiquidDetail",
+            @"raidGraphicsPBRLiquidDetail", @"raidGraphicsParticleDensity",
+            @"raidGraphicsShadowQuality", @"raidGraphicsSSAO", @"raidGraphicsDepthEffects",
+            @"raidGraphicsOutlineMode", @"raidGraphicsComputeEffects",
+            @"raidGraphicsProjectedTextures", @"raidGraphicsEnvironmentDetail",
+            @"raidGraphicsLightMode",
             // Render scale and the frame cap this app writes for a sustained rate
             @"renderScale", @"vsync",
         ]];
@@ -314,8 +323,8 @@ inWorkingDirectory:(NSString *)directory
     // and changing it is changing this constant.
     return @{
         @"renderScale": @"0.75",        // internal render resolution, native is 1.0
-        @"gxForegroundFPS": @"60",      // never render faster than the panel presents
-        @"gxBackgroundFPS": @"30",      // and not at full rate when it is not visible
+        @"useMaxFPS": @"1", @"maxFPS": @"60",       // never render faster than the panel presents
+        @"useMaxFPSBk": @"1", @"maxFPSBk": @"30",   // and not at full rate when it is not visible
         @"vsync": @"1",
     };
 }
