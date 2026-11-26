@@ -1516,7 +1516,14 @@ static NSString *AKAudioStateDescription(void) {
     [closing.rootViewController.view addSubview:column];
     NSLayoutConstraint *logoHeight = [logo.heightAnchor constraintEqualToConstant:120];
     logoHeight.priority = 999;
+    // Centred across the screen. Without this the column's horizontal place was only bounded by
+    // the two edges, so on a screen wider than the column (the iPhone Duo unfolded) Auto Layout
+    // was free to leave it off to one side. Below the edge limits, so an uneven safe area still
+    // keeps it clear of the edges first.
+    NSLayoutConstraint *centred = [column.centerXAnchor constraintEqualToAnchor:closing.rootViewController.view.centerXAnchor];
+    centred.priority = UILayoutPriorityDefaultHigh;
     [NSLayoutConstraint activateConstraints:@[
+        centred,
         [column.centerYAnchor constraintEqualToAnchor:closing.rootViewController.view.centerYAnchor],
         [column.leadingAnchor constraintGreaterThanOrEqualToAnchor:closing.rootViewController.view.safeAreaLayoutGuide.leadingAnchor constant:32],
         [column.trailingAnchor constraintLessThanOrEqualToAnchor:closing.rootViewController.view.safeAreaLayoutGuide.trailingAnchor constant:-32],

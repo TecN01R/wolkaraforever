@@ -25,6 +25,12 @@ correctness.
   on the game. Off by default. *Installed on the Duo; not yet confirmed in play.*
 - The fork's build also runs the `Config.wtf` rules tests.
 
+### Fixed
+
+- **Closing page off-centre.** The "World of Warcraft Forever has closed" countdown page had no
+  horizontal centring, so on the Duo's wide unfolded screen it sat to the right. It is now
+  centred. (Upstream's page; a candidate to send upstream.)
+
 ### Notes
 
 - The graphics-only reset leaves the game's `hwDetect` marker in place. On the Duo the game then
