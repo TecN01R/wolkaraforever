@@ -143,6 +143,30 @@ int TestRealAddonImport(const char *fixtures, const char *temporary) {
         unsafe.managed = NO;
         CHECK(![store removeRecord:unsafe error:&error], "refuse an existing-package removal outside AddOns");
 
+        // --- a manifest larger than the hub's 256 KiB reading window. QuestieDB keeps its whole
+        // database in its .toc files, 12 to 55 MB each, and those used to be skipped: the import
+        // left the folder out without a word, and Questie loaded without its database.
+        NSString *largeRoot = [root stringByAppendingPathComponent:@"Large/Interface/AddOns"];
+        CHECK([fm createDirectoryAtPath:largeRoot withIntermediateDirectories:YES attributes:nil error:&error], "create the large-manifest sandbox");
+        TKAddonStore *large = [[TKAddonStore alloc] initWithAddOnsDirectory:largeRoot product:@"wowf" gameVersion:@"1.60.1"];
+        NSURL *largeZip = [NSURL fileURLWithPath:[[NSString stringWithUTF8String:fixtures] stringByAppendingPathComponent:@"large-manifest.zip"]];
+        CHECK([large importZIPAtURL:largeZip error:&error], "an archive with a large manifest imports");
+        TKAddonRecord *bundle = ManagedRecord(large);
+        CHECK([bundle.folders isEqual:(@[@"Fixture", @"FixtureDB"])], "with every folder it carries, the large-manifest one included");
+        NSString *largeToc = [largeRoot stringByAppendingPathComponent:@"FixtureDB/FixtureDB_Forever.toc"];
+        CHECK([fm fileExistsAtPath:largeToc], "and that folder is installed");
+        TKAddonRecord *database = nil;
+        for (TKAddonRecord *record in large.records) if ([record.identifier isEqual:@"FixtureDB"]) database = record;
+        CHECK(database != nil, "the list shows the large-manifest folder");
+        CHECK([database.name isEqual:@"Fixture Database"] && [database.version isEqual:@"2"],
+              "from its Forever manifest, though no manifest is named after the folder");
+        CHECK([database.author isEqual:@"Zoë"], "decoded as UTF-8: the window was cut at a line end, not inside a character");
+        CHECK([database.compatibility isEqual:@"verified"], "and is verified for Forever");
+        NSString *window = TKAddonReadTOCText(largeToc);
+        CHECK([window hasSuffix:@"\n"] && [window lengthOfBytesUsingEncoding:NSUTF8StringEncoding] <= 256 * 1024,
+              "only whole lines inside the window are read");
+        CHECK([fm removeItemAtPath:[large valueForKey:@"support"] error:&error], "remove the large-manifest support folder");
+
         // --- format 1 and format 2 -> format 3 migration, and recovery from an interrupted one
         NSString *legacyRoot = [root stringByAppendingPathComponent:@"Legacy/Interface/AddOns"];
         CHECK([fm createDirectoryAtPath:[legacyRoot stringByAppendingPathComponent:@"LegacyAddon"]

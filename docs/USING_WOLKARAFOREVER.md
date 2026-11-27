@@ -44,6 +44,8 @@ Open **Add-On Manager** to view recorded packages, install the bundled WolkaraRo
 
 When an add-on folder includes manifests for several WoW clients, the manager uses the manifest explicitly named for Forever or declaring Forever’s interface to show its title and version. It still considers every manifest when reporting compatibility.
 
+An imported archive can hold several add-on folders: Questie's, for example, carries Questie, QuestieDB and QuestieTrace. Every folder with a manifest is installed and listed, however large the manifest is. QuestieDB keeps its database in its manifests, and the manager reads only the first 256 KiB of each one.
+
 A provider tab without a key shows one **Set up CurseForge access** row; opening it asks for the key and then loads the tab. When a key is saved, use the **⚙️** button in the Add-On Manager’s top bar to **Change CurseForge key…** or **Remove key**; removal is confirmed and leaves the key only deleted from this device's Keychain. Each installed row shows the package's name, version, author and its CurseForge thumbnail once the package records a provider identity, and one word about its update with the action that goes with it: **Update**, **Open**, **Retry**, **Link**, **Manage** or **Unavailable**. **Not checked yet** means nothing has asked the provider about that package yet; **Update** is the action that asks, and it either installs the newest file or reports that the package is current. **Update All** runs the same question for every eligible package and finishes when each one has been written, so rows settle together rather than returning to **Not checked yet**.
 
 ![Add-On Manager](screenshots/ui-addons-myaddons.jpg)
