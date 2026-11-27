@@ -8,6 +8,10 @@
 # 60 Hz on purpose, for heat, so this is a personal test, not an upstream candidate.
 #
 # What it changes in the Metal adapter:
+#   - The hold. A capped frame is held 2 ms less than the cap's interval: exactly the interval
+#     sits on a refresh boundary (25 ms is three 120 Hz refreshes), and on the Duo whole seconds
+#     of a 40 cap came out at 33.3 ms with the screen at 120 Hz. 2 ms keeps the intended refresh
+#     count at every rate the policy uses. A game's own longer duration is still kept.
 #   - Timed presentation under a cap. When the cap, not the game's own time, decides when a
 #     frame may appear, the frame is presented with a minimum duration instead of at a host
 #     time. A host time lands on whichever refresh follows it, so 25 ms targets on a 60 Hz
@@ -71,7 +75,35 @@
  
  // Battery Saver: a frame cap applied at the presentation call the guest itself makes.
  //
-@@ -453,7 +475,14 @@ static void observedPresentAt(id command,SEL selector,id<MTLDrawable> drawable,C
+@@ -240,6 +262,18 @@ static void AKBatterySaverRecordPace(id<MTLDrawable> drawable, CFTimeInterval pr
+     if(layer) objc_setAssociatedObject(layer, &paceMarker, @(presented), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+ }
+ 
++// The minimum duration a capped frame is held for. Exactly the cap's interval sits on a refresh
++// boundary - 25 ms is three 120 Hz refreshes to the nanosecond - and on an iPhone Duo whole
++// seconds of a 40 cap came out at 33.3 ms, four refreshes, with the screen at 120 Hz. Holding
++// 2 ms less keeps the intended count at every rate the policy uses (2 ms is under a quarter of
++// a 120 Hz refresh, and every cap's interval is more than a refresh above the count below it)
++// without the coin toss. Timed presentation keeps the full interval: a target time is not
++// rounded the same way.
++#define AK_PACE_HOLD_SLACK 0.002
++static double AKBatterySaverHold(double interval) {
++    return interval > 2.0 * AK_PACE_HOLD_SLACK ? interval - AK_PACE_HOLD_SLACK : interval;
++}
++
+ // Watches the one state that must apply immediately: the AFK dim's fixed 10 FPS.
+ static void AKBatterySaverObserveDim(void) {
+     [NSNotificationCenter.defaultCenter addObserverForName:AKBatterySaverDimDidChangeNotification
+@@ -436,7 +470,7 @@ static void observedPresent(id command,SEL selector,id<MTLDrawable> drawable) {
+     // Immediate presentation has no duration to lengthen, so it becomes a minimum-duration
+     // presentation: the previous drawable is held for the cap's interval instead of being
+     // replaced as soon as the next one is ready.
+-    if(originalPresentAfter) { atomic_fetch_add(&s_paceImmediate,1); originalPresentAfter(command,selector,drawable,interval); return; }
++    if(originalPresentAfter) { atomic_fetch_add(&s_paceImmediate,1); originalPresentAfter(command,selector,drawable,AKBatterySaverHold(interval)); return; }
+     // This runtime has no minimum-duration presentation (the simulator's Metal does not
+     // implement it; the device's does). Timed presentation is Apple's other documented way
+     // to say "not before", so the same cap is applied there: the guest asked for "as soon as
+@@ -453,7 +487,14 @@ static void observedPresentAt(id command,SEL selector,id<MTLDrawable> drawable,C
      // atTime: is the guest's own timing, so it is preserved: the frame is presented no
      // earlier than the cap allows, and never earlier than the guest asked for.
      CFTimeInterval target=AKBatterySaverPaceTarget(drawable,interval);
@@ -82,12 +114,21 @@
 +    // refreshes and gives a steady 30 there and a steady 40 at 120 Hz. The guest's own later
 +    // time is still kept below. Without minimum-duration presentation (the simulator), the
 +    // timed target as before.
-+    if(target>time && originalPresentAfter) { atomic_fetch_add(&s_paceRaised,1); originalPresentAfter(command,@selector(presentDrawable:afterMinimumDuration:),drawable,interval); }
++    if(target>time && originalPresentAfter) { atomic_fetch_add(&s_paceRaised,1); originalPresentAfter(command,@selector(presentDrawable:afterMinimumDuration:),drawable,AKBatterySaverHold(interval)); }
 +    else if(target>time) { atomic_fetch_add(&s_paceRaised,1); originalPresentAt(command,selector,drawable,target); }
      else { atomic_fetch_add(&s_paceKept,1); AKBatterySaverRecordPace(drawable,time); originalPresentAt(command,selector,drawable,time); }
  }
  static void observedPresentAfter(id command,SEL selector,id<MTLDrawable> drawable,CFTimeInterval time) {
-@@ -547,8 +576,10 @@ void AKInstallMetalPresentationDiagnostics(id<MTLDevice> device) {
+@@ -463,7 +504,7 @@ static void observedPresentAfter(id command,SEL selector,id<MTLDrawable> drawabl
+     // The guest asked for a minimum duration of its own. A longer one is its decision and is
+     // kept; a shorter one is raised to the cap.
+     if(time>=interval) { atomic_fetch_add(&s_paceKept,1); originalPresentAfter(command,selector,drawable,time); }
+-    else { atomic_fetch_add(&s_paceExtended,1); originalPresentAfter(command,selector,drawable,interval); }
++    else { atomic_fetch_add(&s_paceExtended,1); originalPresentAfter(command,selector,drawable,MAX(time,AKBatterySaverHold(interval))); }
+ }
+ static void observedWaitUntilCompleted(id command,SEL selector) {
+     AKFrameTiming *timing=measureFrames ? objc_getAssociatedObject(command,&timingMarker) : nil;
+@@ -547,8 +588,10 @@ void AKInstallMetalPresentationDiagnostics(id<MTLDevice> device) {
      // so a submenu change cannot alter the session that is playing.
      BOOL pacing=AKBatterySaverLaunchEnabled() && (AKBatterySaverLaunchFrameLimit()!=AKBatterySaverFrameLimitOff ||
                                                  AKBatterySaverLaunchAFKMinutes()>0);
@@ -99,7 +140,7 @@
      static dispatch_once_t once;
      dispatch_once(&once,^{
          captureFrames=sample; measureFrames=measure;
-@@ -556,6 +587,7 @@ void AKInstallMetalPresentationDiagnostics(id<MTLDevice> device) {
+@@ -556,6 +599,7 @@ void AKInstallMetalPresentationDiagnostics(id<MTLDevice> device) {
              atomic_store(&s_paceWanted,true);
              AKBatterySaverObserveDim();
          }

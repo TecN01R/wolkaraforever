@@ -28,6 +28,9 @@ correctness.
   - The first device run, with 40 asking for "40 to 120 Hz, preferring 40", was steady at 40
     while the screen ran at 120 Hz, but iOS settled the screen at 60 Hz within seconds, and the
     game fell to a steady 30. 40 now asks for exactly 120 Hz, from a thread of its own.
+  - With that, the screen stayed at 120 Hz for a whole session and 85% of frames were exactly
+    25 ms, but whole seconds came out at 33.3 ms. A capped frame is now held 2 ms less than its
+    interval, because exactly 25 ms sits on the boundary between three and four refreshes.
   
   Upstream keeps 60 Hz on purpose, for heat, so this stays off the main branch. *Not yet tested
   on the Duo.*
