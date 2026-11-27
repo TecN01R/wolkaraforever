@@ -31,13 +31,18 @@
 //
 // Personal branch. The app declares CADisableMinimumFrameDurationOnPhone, so iOS may show it
 // at up to 120 Hz, and two things here follow from that:
-//   - Battery Saver's 40 installs the link, because there it is the request: 40 asks for the
-//     panel's 40 Hz step and accepts 80 or 120 Hz, which 40 FPS also divides evenly. While
-//     the AFK dim holds the game at 10 FPS the link is paused, so it stops asking.
+//   - The link is the request for 120 Hz, with Battery Saver's frame limit Off (the game's own
+//     Max Foreground FPS is then the limit) and with its 40 (every third refresh at 120 Hz).
+//     It asks for exactly 120: on an iPhone Duo a request for 40-120 Hz, preferring 40, was
+//     given 60 Hz after a few seconds, where 40 FPS cannot fit and the pacing fell to 30.
+//     Automatic, 30 and 60 ask for nothing. While the AFK dim holds the game at 10 FPS the
+//     link is paused, so it stops asking.
 //   - Every session logs, once a second, how long presented frames stayed on screen
 //     (Presentation.m), which Battery Saver pacing path ran, and the panel's refresh
-//     interval when the link is installed. With the frame limit Off nothing asks for a rate,
-//     so the log shows what iOS gives the game's own cadence.
+//     interval while the link runs.
+// Both run on a thread of their own. On the main thread the link's callbacks came about every
+// 74 ms, because the game keeps that thread busy; whether iOS weighs a late link less is not
+// documented, and a thread of its own takes the question away.
 
 #import <QuartzCore/QuartzCore.h>
 #import <UIKit/UIKit.h>
@@ -67,6 +72,8 @@ static double s_deadlineTotal;      // targetTimestamp - timestamp, the asked-fo
 static double s_panelSum;           // link.duration since the last refresh-test line
 static unsigned s_panelCount;
 static NSTimer *s_refreshTimer;
+static NSThread *s_rateThread;
+static long s_screenMaximum;        // read on the main thread at install
 
 // One line a second while frames are being presented; nothing while none are (background,
 // a paused game), so an idle session does not fill the log.
@@ -81,10 +88,12 @@ static void RefreshReport(void) {
     if (!frames) return;
     uint64_t immediate = 0, extended = 0, raised = 0, kept = 0, bypassed = 0;
     AKMetalBatterySaverPacingCounts(&immediate, &extended, &raised, &kept, &bypassed);
-    AKBatterySaverFramePolicy policy = AKBatterySaverResolvedPolicy(NO);
-    AKLog(@"refresh test: frames=%u ms 8=%u 12=%u 17=%u 21=%u 25=%u 33=%u longer=%u cap=%.0f panel=%.2fms pacing immediate=%llu extended=%llu raised=%llu kept=%llu bypassed=%llu thermal=%d lowpower=%d",
+    // The launch choice rather than the resolved cap: resolving reads UIDevice's battery
+    // state, which belongs to the main thread. Low Power Mode is on the line itself.
+    AKLog(@"refresh test: frames=%u ms 8=%u 12=%u 17=%u 21=%u 25=%u 33=%u longer=%u limit=%@ panel=%.2fms pacing immediate=%llu extended=%llu raised=%llu kept=%llu bypassed=%llu thermal=%d lowpower=%d",
           frames, gaps[0], gaps[1], gaps[2], gaps[3], gaps[4], gaps[5], gaps[6],
-          policy.capped ? policy.framesPerSecond : 0.0, panel * 1000.0,
+          AKBatterySaverLaunchEnabled() ? AKBatterySaverFrameLimitStoredName(AKBatterySaverLaunchFrameLimit()) : @"off",
+          panel * 1000.0,
           (unsigned long long)immediate, (unsigned long long)extended, (unsigned long long)raised,
           (unsigned long long)kept, (unsigned long long)bypassed,
           (int)NSProcessInfo.processInfo.thermalState, (int)NSProcessInfo.processInfo.isLowPowerModeEnabled);
@@ -128,64 +137,92 @@ static void Tick(CADisplayLink *link) {
 }
 
 @interface AKDisplayRateTarget : NSObject
+@property (nonatomic) BOOL wantsLink;
+@property (nonatomic) float minimum, maximum, preferred;
 - (void)tick:(CADisplayLink *)link;
 @end
 
 @implementation AKDisplayRateTarget
 - (void)tick:(CADisplayLink *)link { Tick(link); }
+- (void)report:(NSTimer *)timer { (void)timer; RefreshReport(); }
+- (void)setLinkPaused:(NSNumber *)paused {
+    s_link.paused = paused.boolValue;
+    s_lastTimestamp = 0;
+    AKLog(@"display rate: %@ while the AFK dim is %@", paused.boolValue ? @"paused" : @"resumed",
+          paused.boolValue ? @"on" : @"off");
+}
+// The link and the log timer live on this thread's run loop for the rest of the session.
+- (void)run:(id)unused {
+    (void)unused;
+    NSRunLoop *loop = NSRunLoop.currentRunLoop;
+    if (self.wantsLink) {
+        s_link = [CADisplayLink displayLinkWithTarget:self selector:@selector(tick:)];
+        if (!s_link) {
+            AKLog(@"display rate: could not create a display link; the panel rate is unclaimed");
+        } else {
+            if (@available(iOS 15.0, *)) {
+                s_link.preferredFrameRateRange = CAFrameRateRangeMake(self.minimum, self.maximum, self.preferred);
+            } else {
+                s_link.preferredFramesPerSecond = (NSInteger)self.preferred;
+            }
+            [s_link addToRunLoop:loop forMode:NSRunLoopCommonModes];
+            AKLog(@"display rate: asked for %.0f-%.0f Hz, preferring %.0f (screen maximum %ld), on its own thread",
+                  self.minimum, self.maximum, self.preferred, s_screenMaximum);
+        }
+    }
+    if (s_refreshTimer) [loop addTimer:s_refreshTimer forMode:NSRunLoopCommonModes];
+    // A run loop with nothing to wait on returns at once; the port keeps this one waiting.
+    [loop addPort:NSMachPort.port forMode:NSDefaultRunLoopMode];
+    for (;;) {
+        @autoreleasepool { [loop runMode:NSDefaultRunLoopMode beforeDate:NSDate.distantFuture]; }
+    }
+}
 @end
 
 static AKDisplayRateTarget *s_target;
 
 static void AKDisplayRateInstall(void) {
-    if (s_link || !NSThread.isMainThread) return;
+    if (s_target || !NSThread.isMainThread) return;
+    BOOL highRefresh = AKBatterySaverHighRefreshAllowed();
+    BOOL measure = [NSProcessInfo.processInfo.arguments containsObject:@"--measure-display-rate"];
+    if (!highRefresh && !measure) return;
     AKBatterySaverFrameLimit limit = AKBatterySaverLaunchEnabled() ? AKBatterySaverLaunchFrameLimit()
                                                                    : AKBatterySaverFrameLimitOff;
-    if (AKBatterySaverHighRefreshAllowed() && !s_refreshTimer) {
-        s_refreshTimer = [NSTimer timerWithTimeInterval:1.0 repeats:YES block:^(NSTimer *timer) {
-            (void)timer;
-            RefreshReport();
-        }];
-        [NSRunLoop.mainRunLoop addTimer:s_refreshTimer forMode:NSRunLoopCommonModes];
-        AKLog(@"refresh test: 120 Hz opt-in present; frame limit %@ (Battery Saver Mode %@); screen maximum %ld",
-              AKBatterySaverFrameLimitStoredName(AKBatterySaverLaunchFrameLimit()),
-              AKBatterySaverLaunchEnabled() ? @"on" : @"off", (long)UIScreen.mainScreen.maximumFramesPerSecond);
-    }
-    BOOL forty = limit == AKBatterySaverFrameLimit40;
-    if (!forty && ![NSProcessInfo.processInfo.arguments containsObject:@"--measure-display-rate"]) return;
+    // 120 Hz is asked for wherever Battery Saver sets no cap below it that 60 Hz serves as well.
+    BOOL ask120 = highRefresh && (limit == AKBatterySaverFrameLimitOff || limit == AKBatterySaverFrameLimit40);
+    s_screenMaximum = (long)UIScreen.mainScreen.maximumFramesPerSecond;
     s_target = [AKDisplayRateTarget new];
-    s_link = [CADisplayLink displayLinkWithTarget:s_target selector:@selector(tick:)];
-    if (!s_link) {
-        AKLog(@"display rate: could not create a display link; the panel rate is unclaimed");
-        return;
+    s_target.wantsLink = ask120 || measure;
+    s_target.minimum = ask120 ? 120 : AKDisplayRateMinimum;
+    s_target.maximum = ask120 ? 120 : AKDisplayRateMaximum;
+    s_target.preferred = ask120 ? 120 : AKDisplayRatePreferred;
+    if (highRefresh) {
+        s_refreshTimer = [NSTimer timerWithTimeInterval:1.0 target:s_target selector:@selector(report:)
+                                               userInfo:nil repeats:YES];
+        AKLog(@"refresh test: 120 Hz opt-in present; frame limit %@ (Battery Saver Mode %@); asking for 120 Hz %d; screen maximum %ld",
+              AKBatterySaverFrameLimitStoredName(AKBatterySaverLaunchFrameLimit()),
+              AKBatterySaverLaunchEnabled() ? @"on" : @"off", ask120, s_screenMaximum);
     }
-    float minimum = AKDisplayRateMinimum, maximum = AKDisplayRateMaximum, preferred = AKDisplayRatePreferred;
-    if (forty) { minimum = 40; maximum = 120; preferred = 40; }
-    if (@available(iOS 15.0, *)) {
-        s_link.preferredFrameRateRange = CAFrameRateRangeMake(minimum, maximum, preferred);
-    } else {
-        s_link.preferredFramesPerSecond = (NSInteger)preferred;
-    }
-    [s_link addToRunLoop:NSRunLoop.mainRunLoop forMode:NSRunLoopCommonModes];
-    AKLog(@"display rate: asked for %.0f-%.0f Hz, preferring %.0f (screen maximum %ld)",
-          minimum, maximum, preferred, (long)UIScreen.mainScreen.maximumFramesPerSecond);
-    if (forty) {
-        // The AFK dim holds the game at 10 FPS; a link still asking for 40-120 Hz would keep
-        // the panel fast for a screen nobody is looking at.
+    s_rateThread = [[NSThread alloc] initWithTarget:s_target selector:@selector(run:) object:nil];
+    s_rateThread.name = @"WolkaraForever display rate";
+    s_rateThread.qualityOfService = NSQualityOfServiceUserInteractive;
+    [s_rateThread start];
+    if (s_target.wantsLink) {
+        // The AFK dim holds the game at 10 FPS; a link still asking for 120 Hz would keep the
+        // panel fast for a screen nobody is looking at.
         [NSNotificationCenter.defaultCenter addObserverForName:AKBatterySaverDimDidChangeNotification
                                                         object:nil queue:NSOperationQueue.mainQueue
                                                     usingBlock:^(NSNotification *note) {
             BOOL dimmed = [note.userInfo[AKBatterySaverDimmedKey] boolValue];
-            s_link.paused = dimmed;
-            s_lastTimestamp = 0;
-            AKLog(@"display rate: %@ while the AFK dim is %@", dimmed ? @"paused" : @"resumed", dimmed ? @"on" : @"off");
+            [s_target performSelector:@selector(setLinkPaused:) onThread:s_rateThread
+                           withObject:@(dimmed) waitUntilDone:NO];
         }];
     }
 }
 
-// The adapter is loaded before the guest draws. A display link must be created on
-// the main thread, so the constructor installs it only when the explicit capture
-// argument is present or the launch snapshot holds Battery Saver 40.
+// The adapter is loaded before the guest draws. Install reads UIScreen and the launch
+// snapshot on the main thread, then starts the thread that owns the link and the log; it
+// does nothing without the 120 Hz opt-in or the explicit capture argument.
 __attribute__((constructor)) static void AKDisplayRateLoad(void) {
     if (NSThread.isMainThread) AKDisplayRateInstall();
     else dispatch_async(dispatch_get_main_queue(), ^ { AKDisplayRateInstall(); });

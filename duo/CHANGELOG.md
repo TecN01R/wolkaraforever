@@ -18,12 +18,16 @@ correctness.
   the game's own 40 FPS cap gave uneven frames, because iOS shows an iPhone app without the
   120 Hz opt-in on a 60 Hz rhythm. The personal branch's app now declares
   `CADisableMinimumFrameDurationOnPhone`:
-  - With Battery Saver's frame limit Off, the game's own Max Foreground FPS is the limit, up to
-    120. The game leaves that setting off by default, so set it in the game's graphics options.
-  - Battery Saver adds **40**, which asks iOS for the screen's 40 Hz step (or 80 or 120 Hz) and
-    holds each frame for 25 ms. Without 120 Hz it falls to a steady 30. Automatic, 30 and 60
+  - With Battery Saver's frame limit Off, the app asks iOS for 120 Hz and the game's own Max
+    Foreground FPS is the limit, up to 120. The game leaves that setting off by default, so set
+    it in the game's graphics options.
+  - Battery Saver adds **40**, which asks iOS to hold the screen at 120 Hz and shows each frame
+    for 25 ms. Without 120 Hz it falls to a steady 30. Automatic, 30 and 60 ask for no rate and
     are unchanged, and Low Power Mode still makes every cap 30.
   - Every session logs, once a second, how long frames stayed on screen.
+  - The first device run, with 40 asking for "40 to 120 Hz, preferring 40", was steady at 40
+    while the screen ran at 120 Hz, but iOS settled the screen at 60 Hz within seconds, and the
+    game fell to a steady 30. 40 now asks for exactly 120 Hz, from a thread of its own.
   
   Upstream keeps 60 Hz on purpose, for heat, so this stays off the main branch. *Not yet tested
   on the Duo.*
