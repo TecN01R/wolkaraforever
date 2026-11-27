@@ -215,9 +215,6 @@ int main(int argc, const char *argv[]) {
 
         // 30 FPS is a frame every 33.333 ms, and no two frames closer than that.
         const double cappedInterval = 1.0 / 30.0;
-        // A minimum duration is the interval less 2 ms (personal branch, patch 0905), so that it
-        // does not sit on a refresh boundary; timed targets keep the full interval.
-        const double heldInterval = cappedInterval - 0.002;
         const double tolerance = 1e-6;
 
         // --- The accounting the HUD reads is presented frames, not acquired drawables: ten
@@ -242,12 +239,12 @@ int main(int argc, const char *argv[]) {
             assert(immediateBefore != immediateAfter);
             assert(immediate == (uint64_t)frames);
             assert(sDurations.count == (NSUInteger)frames);
-            for (NSNumber *each in sDurations) assert(fabs(each.doubleValue - heldInterval) < tolerance);
+            for (NSNumber *each in sDurations) assert(fabs(each.doubleValue - cappedInterval) < tolerance);
             // The timed presentations behind the double follow the same cadence.
             for (NSUInteger index = 1; index < sTargets.count; index++)
-                assert(sTargets[index].doubleValue - sTargets[index - 1].doubleValue >= heldInterval - tolerance);
+                assert(sTargets[index].doubleValue - sTargets[index - 1].doubleValue >= cappedInterval - tolerance);
             printf("immediate30: %d immediate presentations became minimum-duration at %.1f ms\n",
-                   frames, heldInterval * 1000.0);
+                   frames, cappedInterval * 1000.0);
         } else if (path == PathImmediate) {
             // Without minimum-duration presentation the adapter uses timed presentation with the
             // same no-earlier-than target - the path a simulator session takes - and the targets
@@ -274,7 +271,7 @@ int main(int argc, const char *argv[]) {
             // A minimum duration shorter than the cap is raised to it.
             assert(extended == (uint64_t)frames);
             assert(sDurations.count == (NSUInteger)frames);
-            for (NSNumber *each in sDurations) assert(fabs(each.doubleValue - heldInterval) < tolerance);
+            for (NSNumber *each in sDurations) assert(fabs(each.doubleValue - cappedInterval) < tolerance);
             printf("minimum30: %llu short minimum durations raised to the cap\n", (unsigned long long)extended);
         } else {
             // A longer one belongs to the guest and is passed through unchanged.

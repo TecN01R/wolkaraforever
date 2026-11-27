@@ -37,10 +37,5 @@
 	<string>public.app-category.games</string>
 	<key>GCSupportsGameMode</key>
 	<true/>
-	<!-- Personal branch: lets the game be shown at up to 120 Hz on a ProMotion iPhone. With
-	     Battery Saver's frame limit Off, the game's own Max Foreground FPS is the limit; Battery
-	     Saver's 40 is every third refresh at 120 Hz (BatterySaverPolicy.h). -->
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
 </dict>
 </plist>

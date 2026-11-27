@@ -20,7 +20,6 @@ NSString *const AKBatterySaverFrameLimitOffName = @"off";
 NSString *const AKBatterySaverFrameLimitAutomaticName = @"auto";
 NSString *const AKBatterySaverFrameLimit30Name = @"30";
 NSString *const AKBatterySaverFrameLimit60Name = @"60";
-NSString *const AKBatterySaverFrameLimit40Name = @"40";
 
 const double AKBatterySaverDimFramesPerSecond = 10.0;
 
@@ -37,7 +36,6 @@ AKBatterySaverFrameLimit AKBatterySaverFrameLimitFromStored(id value) {
     if ([text isEqual:AKBatterySaverFrameLimitAutomaticName]) return AKBatterySaverFrameLimitAutomatic;
     if ([text isEqual:AKBatterySaverFrameLimit30Name]) return AKBatterySaverFrameLimit30;
     if ([text isEqual:AKBatterySaverFrameLimit60Name]) return AKBatterySaverFrameLimit60;
-    if ([text isEqual:AKBatterySaverFrameLimit40Name]) return AKBatterySaverFrameLimit40;
     // "off", a spelling this build does not know, and an old hand edit all mean the same
     // thing: no cap. Guessing a neighbouring value would switch on a cap the user never
     // chose.
@@ -49,7 +47,6 @@ NSString *AKBatterySaverFrameLimitStoredName(AKBatterySaverFrameLimit limit) {
         case AKBatterySaverFrameLimitAutomatic: return AKBatterySaverFrameLimitAutomaticName;
         case AKBatterySaverFrameLimit30: return AKBatterySaverFrameLimit30Name;
         case AKBatterySaverFrameLimit60: return AKBatterySaverFrameLimit60Name;
-        case AKBatterySaverFrameLimit40: return AKBatterySaverFrameLimit40Name;
         case AKBatterySaverFrameLimitOff: break;
     }
     return AKBatterySaverFrameLimitOffName;
@@ -98,8 +95,8 @@ NSInteger AKBatterySaverStoredAFKMinutes(void) {
 }
 
 void AKBatterySaverSetFrameLimit(AKBatterySaverFrameLimit limit) {
-    // Normalised on the way in, so the stored spelling is always one of the five.
-    if (limit < AKBatterySaverFrameLimitOff || limit > AKBatterySaverFrameLimit40)
+    // Normalised on the way in, so the stored spelling is always one of the four.
+    if (limit < AKBatterySaverFrameLimitOff || limit > AKBatterySaverFrameLimit60)
         limit = AKBatterySaverFrameLimitOff;
     [NSUserDefaults.standardUserDefaults setObject:AKBatterySaverFrameLimitStoredName(limit)
                                            forKey:AKBatterySaverFrameLimitDefaultsKey];
@@ -160,7 +157,6 @@ AKBatterySaverFramePolicy AKBatterySaverFramePolicyMake(BOOL enabled,
     switch (limit) {
         case AKBatterySaverFrameLimitAutomatic: fps = externalPower ? 60.0 : 30.0; break;
         case AKBatterySaverFrameLimit60: fps = 60.0; break;
-        case AKBatterySaverFrameLimit40: fps = 40.0; break;
         case AKBatterySaverFrameLimit30: fps = 30.0; break;
         case AKBatterySaverFrameLimitOff: return off;
     }
@@ -186,11 +182,6 @@ BOOL AKBatterySaverDeviceHasExternalPower(void) {
     // No battery to read: the Mac fixture and any other host are always on power.
     return YES;
 #endif
-}
-
-BOOL AKBatterySaverHighRefreshAllowed(void) {
-    id value = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CADisableMinimumFrameDurationOnPhone"];
-    return [value isKindOfClass:NSNumber.class] && [(NSNumber *)value boolValue];
 }
 
 AKBatterySaverFramePolicy AKBatterySaverResolvedPolicy(BOOL dimmed) {

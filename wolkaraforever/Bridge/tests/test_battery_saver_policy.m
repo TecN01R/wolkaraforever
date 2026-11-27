@@ -1,7 +1,7 @@
 // The Battery Saver rules, on their own. Foundation only: no game, no Metal, no simulator.
 //
 // What is checked here is the whole contract the launcher, the Metal adapter and the AppKit
-// adapter share - what a stored value means, what the five selections resolve to on a
+// adapter share - what a stored value means, what the four selections resolve to on a
 // charger or in Low Power Mode, that the dim outranks them, and that a running session
 // keeps the choice it was started with when the submenu changes underneath it.
 #import <Foundation/Foundation.h>
@@ -50,12 +50,9 @@ int main(void) {
         assert(AKBatterySaverFrameLimitFromStored(@"AUTO") == AKBatterySaverFrameLimitAutomatic);
         assert(AKBatterySaverFrameLimitFromStored(@"30") == AKBatterySaverFrameLimit30);
         assert(AKBatterySaverFrameLimitFromStored(@"60") == AKBatterySaverFrameLimit60);
-        assert(AKBatterySaverFrameLimitFromStored(@"40") == AKBatterySaverFrameLimit40);
         // Legacy, hand-edited and nonsensical values resolve safely to Off rather than to a
         // neighbouring rate.
         assert(AKBatterySaverFrameLimitFromStored(@"120") == AKBatterySaverFrameLimitOff);
-        assert(AKBatterySaverFrameLimitFromStored(@"45") == AKBatterySaverFrameLimitOff);
-        assert(AKBatterySaverFrameLimitFromStored(@"48") == AKBatterySaverFrameLimitOff);
         assert(AKBatterySaverFrameLimitFromStored(@"on") == AKBatterySaverFrameLimitOff);
         assert(AKBatterySaverFrameLimitFromStored(@"") == AKBatterySaverFrameLimitOff);
         assert(AKBatterySaverFrameLimitFromStored(nil) == AKBatterySaverFrameLimitOff);
@@ -64,7 +61,6 @@ int main(void) {
         assert([AKBatterySaverFrameLimitStoredName(AKBatterySaverFrameLimitAutomatic) isEqual:@"auto"]);
         assert([AKBatterySaverFrameLimitStoredName(AKBatterySaverFrameLimit30) isEqual:@"30"]);
         assert([AKBatterySaverFrameLimitStoredName(AKBatterySaverFrameLimit60) isEqual:@"60"]);
-        assert([AKBatterySaverFrameLimitStoredName(AKBatterySaverFrameLimit40) isEqual:@"40"]);
         assert([AKBatterySaverFrameLimitStoredName(AKBatterySaverFrameLimitOff) isEqual:@"off"]);
 
         // Minutes: only the three timeouts the submenu offers, plus off.
@@ -79,15 +75,13 @@ int main(void) {
         // A boolean is an NSNumber too: `true` must not mean a one-minute AFK timer.
         assert(AKBatterySaverAFKMinutesFromStored(@YES) == 0);
 
-        // --- Writing normalises, so what a reader finds is always one of the five/four.
+        // --- Writing normalises, so what a reader finds is always one of the four/four.
         AKBatterySaverSetAFKMinutes(3);
         assert(AKBatterySaverStoredAFKMinutes() == 0);
         AKBatterySaverSetAFKMinutes(5);
         assert(AKBatterySaverStoredAFKMinutes() == 5);
         AKBatterySaverSetFrameLimit((AKBatterySaverFrameLimit)99);
         assert(AKBatterySaverStoredFrameLimit() == AKBatterySaverFrameLimitOff);
-        AKBatterySaverSetFrameLimit(AKBatterySaverFrameLimit40);
-        assert(AKBatterySaverStoredFrameLimit() == AKBatterySaverFrameLimit40);
         AKBatterySaverSetFrameLimit(AKBatterySaverFrameLimit60);
         assert(AKBatterySaverStoredFrameLimit() == AKBatterySaverFrameLimit60);
 
@@ -118,17 +112,6 @@ int main(void) {
         AKBatterySaverFramePolicy dimmedOff = AKBatterySaverFramePolicyMake(
             YES, AKBatterySaverFrameLimitOff, YES, NO, YES);
         assert(dimmedOff.capped && dimmedOff.framesPerSecond == AKBatterySaverDimFramesPerSecond);
-
-        // --- 40 (personal branch) is a cap like the others: Low Power Mode makes it 30, and
-        // the dim still outranks it.
-        AKBatterySaverFramePolicy forty = AKBatterySaverFramePolicyMake(YES, AKBatterySaverFrameLimit40, NO, NO, NO);
-        assert(forty.capped && forty.framesPerSecond == 40.0);
-        assert(fabs(AKBatterySaverFramePolicyInterval(forty) - 1.0 / 40.0) < 1e-9);
-        assert(AKBatterySaverFramePolicyMake(YES, AKBatterySaverFrameLimit40, YES, YES, NO).framesPerSecond == 30.0);
-        assert(AKBatterySaverFramePolicyMake(YES, AKBatterySaverFrameLimit40, NO, NO, YES).framesPerSecond == 10.0);
-        assert(!AKBatterySaverFramePolicyMake(NO, AKBatterySaverFrameLimit40, NO, NO, NO).capped);
-        // This test binary has no Info.plist, so no 120 Hz opt-in.
-        assert(!AKBatterySaverHighRefreshAllowed());
 
         // --- The interval a presentation is held for: 1/60, 1/30, 1/10; nothing when Off.
         assert(fabs(AKBatterySaverFramePolicyInterval(plugged) - 1.0 / 60.0) < 1e-9);

@@ -115,11 +115,5 @@ mkdir -p "$(dirname "$report")"
     echo "Entitlements: increased-memory-limit, extended-virtual-addressing"
     echo "Built-in JIT helper: WolkaraJITHelper.appex, StikJIT $stikjit_version"
     echo "iOS Game Mode: declared (games category, GCSupportsGameMode)"
-    # Personal branch: the 120 Hz opt-in for Battery Saver's 40 and 120 choices.
-    if [ "$(plutil -extract CADisableMinimumFrameDurationOnPhone raw "$app/Info.plist" 2>/dev/null)" = true ]; then
-        echo "120 Hz on iPhone: allowed (CADisableMinimumFrameDurationOnPhone)"
-    else
-        echo "120 Hz on iPhone: not allowed (60 Hz)"
-    fi
 } > "$report"
 echo "verify_ipa: PASS ($report)"

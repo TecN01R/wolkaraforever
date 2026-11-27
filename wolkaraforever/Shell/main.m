@@ -934,10 +934,10 @@ static NSString *AKAudioStateDescription(void) {
     // through, including the execution-mode chooser's continuation - so a later change to the
     // submenu waits for the next launch rather than resizing the session under the player.
     AKBatterySaverCommitLaunchSnapshot();
-    WKLog("ui", @"battery saver: this launch is mode=%@ frame=%@ afk=%ld min 120Hz-opt-in=%d",
+    WKLog("ui", @"battery saver: this launch is mode=%@ frame=%@ afk=%ld min",
           AKBatterySaverLaunchEnabled()?@"on":@"off (full performance)",
           AKBatterySaverFrameLimitStoredName(AKBatterySaverLaunchFrameLimit()),
-          (long)AKBatterySaverLaunchAFKMinutes(), AKBatterySaverHighRefreshAllowed());
+          (long)AKBatterySaverLaunchAFKMinutes());
     if (self.executionMode==TKExecutionModeLocalSigning) { [self launchLocalSigningApp:app]; return; }
     if (self.executionMode==TKExecutionModeExternalJIT) { [self launchExternalJITApp:app]; return; }
 #if TOLKARA_INTEGRATED_AUTH
