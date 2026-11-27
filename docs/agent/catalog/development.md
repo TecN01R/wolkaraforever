@@ -1,5 +1,5 @@
 # Development migration record
 
-> Verified: 2026-11-25 · Source: `b9f9beb` · Proof: repository index
+> Verified: 2026-11-26 · Source: `555668e` · Proof: repository index
 
 The former `development/` documentation, completed plans, reviews, and validation records were removed from the tracked documentation set. Their current operational replacements are the documents in `docs/agent/`; completed records remain recoverable from Git history but are not current instructions.
