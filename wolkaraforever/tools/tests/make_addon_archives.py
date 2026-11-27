@@ -15,6 +15,26 @@ def archive(name, entries, compression=zipfile.ZIP_DEFLATED):
 toc = b'## Interface: 16001\n## Title: WolkaraForever Fixture\n## Version: 1\nmain.lua\n'
 archive('valid', [('Fixture/', b''), ('Fixture/Fixture.toc', toc), ('Fixture/main.lua', b'-- fixture\n')])
 archive('nested', [('Wrapper/Fixture/Fixture.toc', toc)])
+
+# Shaped like the Questie bundle: an add-on beside a database add-on whose manifests are far
+# larger than the hub's 256 KiB reading window (QuestieDB keeps its data in its .toc files)
+# and none of which is named after its folder. The window ends inside a two-byte character,
+# so a reader that cut there instead of at a line end would fail UTF-8 decoding.
+def large_manifest(interface, title):
+    limit = 256 * 1024
+    line = b'## X-Data: ' + b'0' * 100 + b'\n'
+    body = f'## Interface: {interface}\n## Title: {title}\n## Author: Zoë\n## Version: 2\n'.encode()
+    while len(body) + len(line) < limit - 200:
+        body += line
+    filler = b'## X-Data: '
+    body += filler + b'0' * (limit - 1 - len(body) - len(filler)) + 'é'.encode() + b'\n'
+    assert body[limit - 1] == 0xC3 and len(body) > limit
+    return body + line * 2000
+
+archive('large-manifest', [('Fixture/Fixture.toc', toc), ('Fixture/main.lua', b'-- fixture\n'),
+                           ('FixtureDB/FixtureDB_Forever.toc', large_manifest(16001, 'Fixture Database')),
+                           ('FixtureDB/FixtureDB_Vanilla.toc', large_manifest(11508, 'Fixture Database (Vanilla)')),
+                           ('FixtureDB/data.lua', b'-- data\n')])
 for name, path in [('traversal', '../outside'), ('absolute', '/outside'), ('double', 'Fixture//file'),
                    ('dot', 'Fixture/./file'), ('colon', 'Fixture/a:b'), ('control', 'Fixture/a\nb')]:
     archive(name, [(path, b'bad')])

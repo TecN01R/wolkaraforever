@@ -58,6 +58,27 @@ static NSString *const ForeverInterface = @"16001";
 
 static NSArray<NSString *> *Interfaces(NSString *toc);
 static BOOL Fail(NSError **error, NSString *message) { if(error)*error=[NSError errorWithDomain:@"WolkaraForever.AddOns" code:1 userInfo:@{NSLocalizedDescriptionKey:message}];return NO; }
+static const NSUInteger TOCTextLimit = 256 * 1024;
+// A manifest larger than the window used to be skipped outright, which made its folder look
+// like no add-on at all: an archive import then left that folder out without a word, and the
+// list never showed it. QuestieDB is such a folder, and Questie, which loads without it, fails
+// on every database lookup. Only the window is read, so a 55 MB manifest costs 256 KiB.
+NSString *TKAddonReadTOCText(NSString *path) {
+    NSFileHandle *handle=[NSFileHandle fileHandleForReadingAtPath:path];
+    if(!handle) return nil;
+    NSData *data=[handle readDataUpToLength:TOCTextLimit+1 error:NULL];
+    [handle closeAndReturnError:NULL];
+    if(!data.length) return nil;
+    if(data.length>TOCTextLimit) {
+        // Whole lines only. A cut inside a multi-byte character would fail UTF-8 decoding and
+        // turn every accented title into Latin-1 noise; a newline byte never occurs inside a
+        // UTF-8 sequence, so cutting after one is always clean.
+        NSRange newline=[data rangeOfData:[NSData dataWithBytes:"\n" length:1] options:NSDataSearchBackwards range:NSMakeRange(0,TOCTextLimit)];
+        if(newline.location==NSNotFound) return nil;
+        data=[data subdataWithRange:NSMakeRange(0,newline.location+1)];
+    }
+    return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]?:[[NSString alloc] initWithData:data encoding:NSISOLatin1StringEncoding];
+}
 static NSString *TOC(NSString *folder) {
     NSArray *names=[[NSFileManager.defaultManager contentsOfDirectoryAtPath:folder error:NULL] sortedArrayUsingSelector:@selector(compare:)];
     NSString *chosen=nil;
@@ -65,9 +86,7 @@ static NSString *TOC(NSString *folder) {
     NSMutableArray<NSString *> *others=[NSMutableArray array];
     NSString *folderName=folder.lastPathComponent;
     for(NSString *name in names) if([name.pathExtension.lowercaseString isEqual:@"toc"]) {
-        NSData *data=[NSData dataWithContentsOfFile:[folder stringByAppendingPathComponent:name] options:0 error:NULL];
-        if(!data.length || data.length>256*1024) continue;
-        NSString *toc=[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]?:[[NSString alloc] initWithData:data encoding:NSISOLatin1StringEncoding];
+        NSString *toc=TKAddonReadTOCText([folder stringByAppendingPathComponent:name]);
         if(!toc) continue;
         // A package may carry manifests for several game clients. Prefer the one explicitly
         // named for Forever, then a manifest that declares Forever's interface, then its base

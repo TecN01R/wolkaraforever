@@ -44,6 +44,13 @@ FOUNDATION_EXPORT NSString *const TKAddonStoredUpdateTerminal;      // "failed-t
 
 FOUNDATION_EXPORT BOOL TKAddonProviderIsCurseForge(NSDictionary *_Nullable provider);
 
+// The text of one .toc manifest, as far as the add-on hub reads one: its first 256 KiB, cut
+// back to the last whole line. The metadata the hub uses (`## Title:`, `## Interface:` ...)
+// sits at the top, and a manifest can be far larger than that window: QuestieDB keeps its
+// whole database in its .toc files, 12 to 55 MB each. nil when the file cannot be read, is
+// empty, or has no line break inside the window.
+FOUNDATION_EXPORT NSString *_Nullable TKAddonReadTOCText(NSString *path);
+
 @interface TKAddonRecord : NSObject
 @property(nonatomic, copy) NSString *identifier;
 // Stable package identity. Survives an update of the package's contents, so a package is one

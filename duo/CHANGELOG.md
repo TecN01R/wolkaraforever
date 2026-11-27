@@ -38,6 +38,15 @@ correctness.
 
 ### Fixed
 
+- **Questie installed without its database.** The Add-On Manager skipped any add-on manifest
+  (`.toc`) larger than 256 KiB, so a folder whose manifests are all large did not count as an
+  add-on. QuestieDB keeps its database in its manifests (12 to 55 MB each), so importing
+  Questie's archive installed Questie and QuestieTrace, left QuestieDB out without a word, and
+  Questie then reported "QuestieDB not installed". The manager now reads the first 256 KiB of a
+  manifest instead of skipping it. Not Duo-specific: upstream has the same code, and the fix is
+  on branch `fix/addon-large-toc`, based on upstream's `main`. *Fixture-tested; not yet tested on
+  the Duo.* If Questie is already installed, remove it in the Add-On Manager and import the
+  archive again.
 - **Closing page off-centre.** The "World of Warcraft Forever has closed" countdown page had no
   horizontal centring, so on the Duo's wide unfolded screen it sat to the right. It is now
   centred. (Upstream's page; a candidate to send upstream.)
